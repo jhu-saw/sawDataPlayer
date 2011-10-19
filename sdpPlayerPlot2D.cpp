@@ -209,7 +209,6 @@ void sdpPlayerPlot2D::Run(void)
 
 void sdpPlayerPlot2D::UpdatePlot(void)
 {
-    double timeStamp = 0.0;
     double ScaleValue = 0.0; 
     mtsInt index;
 
@@ -423,7 +422,6 @@ void sdpPlayerPlot2D::OpenFile(void)
 
     result = QFileDialog::getOpenFileName(mainWidget, "Open File", tr("./"), tr("Desc (*.desc)"));
     if (!result.isNull()) {
-        size_t i = 0;
 
         // read Data from file
 	    ExtractDataFromStateTableCSVFile(result);
@@ -446,6 +444,8 @@ void sdpPlayerPlot2D::UpdateLimits()
 
     ExWidget.SaveStartSpin->setRange(PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
     ExWidget.SaveEndSpin->setRange(PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
+    ExWidget.SaveEndSpin->setValue(PlayerDataInfo.DataEnd());
+
 }
 
 
@@ -488,3 +488,10 @@ void sdpPlayerPlot2D::ResetPlayer(void)
     Plot2DAccess.WriteVectorIndex(0); 
 }
 
+
+void sdpPlayerPlot2D::SetSynced(bool isSynced) {
+
+  ExWidget.SyncCheck->setChecked(isSynced);
+  Sync = isSynced;
+
+}

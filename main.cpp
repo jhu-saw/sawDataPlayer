@@ -28,12 +28,18 @@ http://www.cisst.org/cisst/license.txt.
 #include "sdpPlayerVideo.h"
 #include "sdpPlayerPlot2D.h"
 
+#ifdef sawPlayer_has_sawOpenAL
+#include "sdpPlayerAudio.h"
+#endif
+
 int main(int argc, char *argv[])
 {
    // log configuration
     cmnLogger::SetMask(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskDefaultLog(CMN_LOG_ALLOW_ALL);
-    cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
+   // cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
+    cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_DEBUG);
+
 
     // create our components
     mtsComponentManager * componentManager;
@@ -42,23 +48,32 @@ int main(int argc, char *argv[])
     QApplication application(argc, argv);
     svlInitialize();
     sdpPlayerManager * playerManager = new sdpPlayerManager("PlayerManager", 1.0 * cmn_ms);
-    sdpPlayerExample * player = new sdpPlayerExample("Player", 1.0 * cmn_ms);
+   // sdpPlayerExample * player = new sdpPlayerExample("Player", 1.0 * cmn_ms);
     sdpPlayerVideo * videoPlayer = new sdpPlayerVideo("VideoPlayer", 1.0 * cmn_ms);
     sdpPlayerPlot2D * plotPlayer = new sdpPlayerPlot2D("PlotPlayer", 40.0 * cmn_ms);
 
 
+#ifdef sawPlayer_has_sawOpenAL
+    sdpPlayerAudio * audioPlayer = new sdpPlayerAudio("AudioPlayer", 40.0 * cmn_ms);
+    componentManager->AddComponent(audioPlayer);
+#endif
+
     componentManager->AddComponent(playerManager);
-    componentManager->AddComponent(player);
+  //  componentManager->AddComponent(player);
     componentManager->AddComponent(videoPlayer);
     componentManager->AddComponent(plotPlayer);
 
     //Connect provider/required interface of Base Class for Qt Thread
-    componentManager->Connect( player->GetName(), "GetStatus", player->GetName(), "ProvidesStatus");
-    componentManager->Connect( videoPlayer->GetName(), "GetStatus", videoPlayer->GetName(), "ProvidesStatus");
-    componentManager->Connect( plotPlayer->GetName(), "GetStatus",plotPlayer->GetName(), "ProvidesStatus");
+ //   componentManager->Connect(player->GetName(), "GetStatus", player->GetName(), "ProvidesStatus");
+    componentManager->Connect(videoPlayer->GetName(), "GetStatus", videoPlayer->GetName(), "ProvidesStatus");
+    componentManager->Connect(plotPlayer->GetName(), "GetStatus",plotPlayer->GetName(), "ProvidesStatus");
     
     //Connect componets-added interfaces for Qt Thread
-    componentManager->Connect( plotPlayer->GetName(), "Get2DPlotStatus",plotPlayer->GetName(), "Provides2DPlot");    
+    componentManager->Connect(plotPlayer->GetName(), "Get2DPlotStatus",plotPlayer->GetName(), "Provides2DPlot");
+
+ #ifdef sawPlayer_has_sawOpenAL
+    componentManager->Connect(audioPlayer->GetName(), "GetStatus", audioPlayer->GetName(), "ProvidesStatus");
+ #endif
 
     // create the components, i.e. find the commands
     componentManager->CreateAll();
@@ -68,14 +83,24 @@ int main(int argc, char *argv[])
     componentManager->StartAll();
     componentManager->WaitForStateAll(mtsComponentState::ACTIVE);
 
-    playerManager->AddPlayer(player);
+ //   playerManager->AddPlayer(player);
     playerManager->AddPlayer(videoPlayer);
     playerManager->AddPlayer(plotPlayer);
 
+#ifdef sawPlayer_has_sawOpenAL
+    playerManager->AddPlayer(audioPlayer);
+#endif
+
+
     playerManager->Configure();
-    player->Configure();
+ //   player->Configure();
     videoPlayer->Configure();
     plotPlayer->Configure();
+
+#ifdef sawPlayer_has_sawOpenAL
+    audioPlayer->Configure();
+#endif
+
 
     application.setStyle("Plastique");
     application.exec();

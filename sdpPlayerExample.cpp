@@ -281,3 +281,11 @@ void sdpPlayerExample::UpdateLimits()
     ExWidget.SaveStartSpin->setRange( PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
     ExWidget.SaveEndSpin->setRange( PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
 }
+
+void sdpPlayerExample::SetSynced(bool isSynced) {
+
+  ExWidget.SyncCheck->setChecked(isSynced);
+  Sync = isSynced;
+
+}
+

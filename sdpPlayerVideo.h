@@ -56,7 +56,7 @@ public:
     void Cleanup(void) {};
 
     //If not synced then the player needs to go through Manager in order to play.
-    void SetSync(bool isSynced);
+    void SetSynced(bool isSynced);
 
 private:
 
@@ -80,10 +80,12 @@ private:
     svlFilterImageOpenGLQtWidget * VideoWidget;
 
      // instantiating SVL stream and filters
-    svlStreamManager StreamManager;;
-    svlFilterImageOverlay Overlay;
-    svlFilterSourceVideoFile Source;
-    svlOverlayTimestamp * TimestampOverlay;
+    svlStreamManager            StreamManager;
+    svlFilterImageOverlay       Overlay;
+    svlFilterSourceVideoFile    Source;
+    svlOverlayTimestamp         * TimestampOverlay;
+
+    std::string                 FileName;
 
 private slots:
 

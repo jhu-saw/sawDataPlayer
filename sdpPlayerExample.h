@@ -48,6 +48,8 @@ public:
     void Startup(void);
     void Run(void);
     void Cleanup(void) {};
+    //If not synced then the player needs to go through Manager in order to play.
+    void SetSynced(bool isSynced);
 
 private:
 

@@ -41,7 +41,7 @@ public:
     ~sdpPlayerParseStateTableData();
 
     //call this after tasks connections are made
-    void Configure(const std::string & filename = ""){};
+    void Configure(const std::string & CMN_UNUSED(filename)){};
     void Startup(void){};
     void Run(void);
     void Cleanup(void) {};

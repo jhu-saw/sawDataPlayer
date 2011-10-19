@@ -135,9 +135,9 @@
         </layout>
        </item>
        <item>
-        <widget class="QPushButton" name="SaveButton">
+        <widget class="QPushButton" name="SetRangeButton">
          <property name="text">
-          <string>SetRange?</string>
+          <string>SetRange</string>
          </property>
         </widget>
        </item>

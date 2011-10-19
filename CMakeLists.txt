@@ -23,17 +23,39 @@ if (cisst_FOUND_AS_REQUIRED)
 
   include_directories (${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
+  # sawOpenAL has been compiled within cisst, we should find it automatically
+  find_package (sawOpenAL QUIET HINTS "${CISST_BINARY_DIR}/saw/components")
+
+ if (sawOpenAL_FOUND)
+   set (audioPlayer_Sources
+       sdpPlayerAudio.h
+       sdpPlayerAudio.cpp)
+
+   set (audioPlayer_Header
+       sdpPlayerAudio.h)
+
+
+       add_definitions(-DsawPlayer_has_sawOpenAL)
+  endif (sawOpenAL_FOUND)
+
+
   qt4_wrap_cpp (QT_WRAPPED_CPP
                 sdpPlayerBase.h
                 sdpPlayerExample.h
                 sdpPlayerManager.h
                 sdpPlayerVideo.h
                 sdpPlayerPlot2D.h
+                ${audioPlayer_Header}
                 )
 
   qt4_wrap_ui (QT_WRAPPED_UI
                sdpPlayerManagerWidget.ui
                sdpPlayerWidget.ui)
+
+
+
+
+
 
   add_library (sawDataPlayerComponents ${IS_SHARED}
                ${QT_WRAPPED_CPP}
@@ -55,9 +77,19 @@ if (cisst_FOUND_AS_REQUIRED)
                sdpPlayerVideo.cpp
                sdpPlayerParseStateTableData.h
                sdpPlayerParseStateTableData.cpp
+               ${audioPlayer_Sources}
                )
 
   cisst_target_link_libraries (sawDataPlayerComponents ${REQUIRED_CISST_LIBRARIES})
+
+  if (sawOpenAL_FOUND)
+
+    # sawOpenAL configuration
+    include_directories (${sawOpenAL_INCLUDE_DIR})
+    link_directories (${sawOpenAL_LIBRARY_DIR})
+    target_link_libraries (sawDataPlayerComponents ${sawOpenAL_LIBRARIES})
+
+  endif (sawOpenAL_FOUND)
 
   add_executable (sawDataPlayer
                   main.cpp)

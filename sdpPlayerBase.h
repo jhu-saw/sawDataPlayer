@@ -63,7 +63,7 @@ public:
     virtual void Startup(void) {};    // set some initial values
     virtual void Run(void) {};        // performed periodically
     virtual void Cleanup(void) {}; // user defined cleanup
-
+    //need to overrride this in derived class
     virtual void SetSynced(bool isSynced) { Sync = isSynced; };
 
     //States of operation
