@@ -24,6 +24,8 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <QObject>
 #include <QtGui/QCloseEvent>
+#include <QPushButton>
+#include <QSpinBox>
 #include "ui_sdpPlayerWidget.h"
 
 #include "sdpPlayerBase.h"
@@ -33,6 +35,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstStereoVision/svlFilterImageOpenGLQtWidget.h>
 #include <cisstStereoVision/svlFilterSourceVideoFile.h>
 #include <cisstStereoVision/svlFilterVideoFileWriter.h>
+#include <cisstStereoVision/svlFilterImageCropper.h>
 
 //! todo Think about the thread safety issue. (At the moment, mtscommands and qslots can manipulte same data at the same time)
 //! If the data processing is not heavy we can use the main QT thread via QTimer and mtsTaskFromCallback, or add more mtsFunction calls.
@@ -82,14 +85,20 @@ private:
 
      // instantiating SVL stream and filters
     svlStreamManager            StreamManager;
-    svlStreamManager            *SaveStream;
     svlFilterImageOverlay       Overlay;
     svlFilterSourceVideoFile    Source;
-    svlFilterSourceVideoFile    source;
-    svlFilterVideoFileWriter    writer;
+    svlFilterImageCropper       Cropper;
+
     svlOverlayTimestamp         * TimestampOverlay;
 
     std::string                 FileName;
+    QPushButton                 *CropButton;
+    QSpinBox                    *LeftSpinBox;
+    QSpinBox                    *RightSpinBox;
+    QSpinBox                    *TopSpinBox;
+    QSpinBox                    *BottomSpinBox;
+
+    svlRect                     CropRect;
 
 private slots:
 
@@ -101,6 +110,7 @@ private slots:
     void QSlotSetSaveEndClicked(void);
     void QSlotOpenFileClicked(void);
     void QSlotSetRangeClicked(void);
+    void QSlotCropButtonClicked(bool checked);
 
 };
 

@@ -31,6 +31,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstOSAbstraction/osaGetTime.h>
 #include <cisstStereoVision/svlFilterOutput.h>
 #include <cisstOSAbstraction/osaSleep.h>
+#include <cisstStereoVision/svlFilterImageCropper.h>
+
 
 CMN_IMPLEMENT_SERVICES(sdpPlayerVideo);
 
@@ -42,6 +44,7 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     // create the user interface
     ExWidget.setupUi(&Widget);
     VideoWidget = new svlFilterImageOpenGLQtWidget();
+    VideoWidget->SetEnableToolTip(true);
 
     QGridLayout *CentralLayout = new QGridLayout(&MainWindow);
     CentralLayout->setContentsMargins(0, 0, 0, 0);
@@ -50,8 +53,28 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
 
     CentralLayout->addWidget(VideoWidget, 0, 0, 1, 4);
     CentralLayout->addWidget(&Widget,1,1,1,1);
+    Cropper.Enable();
 
-    SaveStream = new svlStreamManager(8);
+    CropButton = new QPushButton(&Widget);
+    CropButton->setCheckable(true);
+    CropButton->setChecked(false);
+    CropButton->setText("CropDisabled");
+
+    LeftSpinBox     = new QSpinBox(&Widget);
+    RightSpinBox    = new QSpinBox(&Widget);
+    TopSpinBox       = new QSpinBox(&Widget);
+    BottomSpinBox   = new QSpinBox(&Widget);
+
+    QGridLayout *cropLayout = new QGridLayout(&Widget);
+
+    CentralLayout->addLayout(cropLayout,1,3,1,1);
+    cropLayout->addWidget(TopSpinBox,0,0,1,2,Qt::AlignJustify);
+    cropLayout->addWidget(LeftSpinBox,1,0,1,1,Qt::AlignLeft);
+    cropLayout->addWidget(RightSpinBox,1,1,1,1,Qt::AlignRight);
+    cropLayout->addWidget(BottomSpinBox,2,0,1,2,Qt::AlignJustify);
+    cropLayout->addWidget(CropButton,3,0,1,2,Qt::AlignJustify);
+
+
 }
 
 
@@ -82,8 +105,12 @@ void sdpPlayerVideo::MakeQTConnections(void)
 
     QObject::connect(ExWidget.OpenFileButton, SIGNAL(clicked()),
                      this, SLOT( QSlotOpenFileClicked()) );
+
     QObject::connect(ExWidget.SetRangeButton, SIGNAL(clicked()),
                      this, SLOT( QSlotSetRangeClicked()) );
+
+    QObject::connect(this->CropButton, SIGNAL(clicked(bool)),
+                     this, SLOT( QSlotCropButtonClicked(bool)) );
 
 }
 
@@ -218,10 +245,19 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
     if (Sync) {
         CMN_LOG_CLASS_RUN_VERBOSE << "Save " << saveParameters << std::endl;
 
-        source.SetChannelCount(1);
 
+        svlFilterSourceVideoFile    *source;
+        svlFilterVideoFileWriter    *writer;
+        svlFilterImageCropper       *cropper;
 
-        if (source.SetFilePath(FileName) != SVL_OK) {
+        svlStreamManager            *SaveStream;
+
+        SaveStream = new svlStreamManager(8);
+        source     = new svlFilterSourceVideoFile(1);
+        writer     = new svlFilterVideoFileWriter;
+        cropper    = new svlFilterImageCropper;
+
+        if (source->SetFilePath(FileName) != SVL_OK) {
             CMN_LOG_CLASS_RUN_ERROR << std::endl << "Wrong file name... " << std::endl;
             return;
         }
@@ -247,24 +283,27 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
 
         CMN_LOG_CLASS_RUN_VERBOSE << "`Start Recording`: setting up video file `" << videofilename.str() << "`" << std::endl;
 
-        writer.SetFilePath(videofilename.str(), 0);
-        writer.SetCodecParams(compression, 0);
-        writer.OpenFile(0);
+        writer->SetFilePath(videofilename.str(), 0);
+        writer->SetCodecParams(compression, 0);
+        writer->OpenFile(0);
 
         svlVideoIO::ReleaseCompression(compression);
         svlVideoIO::ReleaseCodec(codec);
+        writer->Record();
 
-        CMN_LOG_CLASS_RUN_VERBOSE << "Converting: '" << FileName << "' to '" << videofilename.str()  << std::endl;
-
-        writer.Record();
-
-        // chain filters to pipeline
         svlFilterOutput* output = 0;
 
-        SaveStream->SetSourceFilter(&source);
-        output = source.GetOutput();
+        SaveStream->SetSourceFilter(source);
+        output = source->GetOutput();
 
-        output->Connect(writer.GetInput());
+        //use the main window settings to crop the image.
+        if (this->Cropper.IsEnabled()) {
+            cropper->SetRectangle(Cropper.GetRectangle());
+            output->Connect(cropper->GetInput());
+            output = cropper->GetOutput();
+        }
+
+        output->Connect(writer->GetInput());
 
         CMN_LOG_CLASS_RUN_VERBOSE << "Converting: '" << FileName << "' to '" <<  videofilename.str()  << std::endl;
 
@@ -274,9 +313,9 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
             return;
         }
 
-        source.SetRange(source.GetPositionAtTime(saveParameters.Start()),source.GetPositionAtTime(saveParameters.End()));
-        source.SetTargetFrequency(1000.0); // as fast as possible
-        source.SetLoop(false);
+        source->SetRange(source->GetPositionAtTime(saveParameters.Start()),source->GetPositionAtTime(saveParameters.End()));
+        source->SetTargetFrequency(1000.0); // as fast as possible
+        source->SetLoop(false);
 
         // start stream
         if (SaveStream->Play() != SVL_OK) {
@@ -285,10 +324,10 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
         }
 
         do {
-            cerr << " > Frames processed: " << source.GetFrameCounter() << "     \r";
+            std::cerr << " > Frames processed: " << source->GetFrameCounter() << "     \r";
         } while (SaveStream->IsRunning() && SaveStream->WaitForStop(0.5) == SVL_WAIT_TIMEOUT);
 
-       CMN_LOG_CLASS_RUN_VERBOSE << " > Frames processed: " << source.GetFrameCounter() << "           " << std::endl;
+       CMN_LOG_CLASS_RUN_VERBOSE << " > Frames processed: " << source->GetFrameCounter() << "           " << std::endl;
 
         if (SaveStream->GetStreamStatus() < 0) {
             // Some error
@@ -305,7 +344,16 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
         CMN_LOG_CLASS_RUN_VERBOSE << "Releasing Pipeline" <<std::endl;
         SaveStream->Release();
         CMN_LOG_CLASS_RUN_VERBOSE << "Released Pipeline" <<std::endl;
-        osaSleep(2);
+
+        mtsManagerLocal *LCM = mtsManagerLocal::GetInstance();
+        LCM->RemoveComponent(source);
+        LCM->RemoveComponent(writer);
+        LCM->RemoveComponent(cropper);
+        delete SaveStream;
+        delete writer;
+        delete source;
+        delete cropper;
+
     }
 }
 
@@ -435,7 +483,6 @@ void sdpPlayerVideo::UpdateLimits()
 void sdpPlayerVideo::SetupPipeline(const std::string &filename)
 {
 
-
     StreamManager.Release();
     Source.SetChannelCount(1);
 
@@ -446,7 +493,6 @@ void sdpPlayerVideo::SetupPipeline(const std::string &filename)
 
     FileName = filename;
 
-
     if (!TimestampOverlay) {
 
         TimestampOverlay = new svlOverlayTimestamp (0, true, VideoWidget, svlRect(4, 4, 134, 21),
@@ -455,12 +501,36 @@ void sdpPlayerVideo::SetupPipeline(const std::string &filename)
 
         // chain filters to pipeline
         StreamManager.SetSourceFilter(&Source); // chain filters to pipeline
-        Source.GetOutput()->Connect(Overlay.GetInput());
+        Source.GetOutput()->Connect(Cropper.GetInput());
+        Cropper.GetOutput()->Connect(Overlay.GetInput());
         Overlay.GetOutput()->Connect(VideoWidget->GetInput());
 
     }
+
+    if (CropButton->isChecked()) {
+        Cropper.SetRectangle(CropRect);
+        //Cropper.SetRectangle(0,0,555,555);
+    }
+    else {
+        svlVideoCodecBase * codec = svlVideoIO::GetCodec(FileName);
+        double f;
+        unsigned int w;
+        unsigned int h;
+        if (codec)
+        codec->Open(FileName,w,h,f);
+        codec->Close();
+        Cropper.SetRectangle(0,0,w,h);
+        svlVideoIO::ReleaseCodec(codec);
+
+    }
+
     StreamManager.Play();
     Source.Pause();
+
+    TopSpinBox->setRange(0,     Source.GetHeight());
+    BottomSpinBox->setRange(0,  Source.GetHeight());
+    RightSpinBox->setRange(0,   Source.GetWidth());
+    LeftSpinBox->setRange(0,    Source.GetWidth());
 
 }
 
@@ -480,4 +550,24 @@ void sdpPlayerVideo::QSlotSetRangeClicked(void) {
       UpdateSaveParams(SaveParameters);
 }
 
+void sdpPlayerVideo::QSlotCropButtonClicked(bool checked) {
 
+    if (checked)
+    {
+        CropRect = svlRect(LeftSpinBox->value(),TopSpinBox->value(),RightSpinBox->value(),BottomSpinBox->value());
+        CMN_LOG_CLASS_RUN_VERBOSE<<"Crop set to :"<<
+                                   LeftSpinBox->value()<<","<<
+                                   TopSpinBox->value()<<","<<
+                                   RightSpinBox->value()<<","<<
+                                   BottomSpinBox->value()<<std::endl;
+
+        SetupPipeline(FileName);
+
+        CropButton->setText("CropEnabled");
+    }
+    else {
+
+        SetupPipeline(FileName);
+        CropButton->setText("CropDisabled");
+    }
+}
