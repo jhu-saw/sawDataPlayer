@@ -32,6 +32,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstStereoVision/svlFilterImageOverlay.h>
 #include <cisstStereoVision/svlFilterImageOpenGLQtWidget.h>
 #include <cisstStereoVision/svlFilterSourceVideoFile.h>
+#include <cisstStereoVision/svlFilterVideoFileWriter.h>
 
 //! todo Think about the thread safety issue. (At the moment, mtscommands and qslots can manipulte same data at the same time)
 //! If the data processing is not heavy we can use the main QT thread via QTimer and mtsTaskFromCallback, or add more mtsFunction calls.
@@ -42,7 +43,7 @@ http://www.cisst.org/cisst/license.txt.
 class CISST_EXPORT sdpPlayerVideo: public sdpPlayerBase
 {
     Q_OBJECT;
-    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_ALLOW_DEFAULT);
+    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_LOD_RUN_DEBUG);
 
 public:
     sdpPlayerVideo(const std::string & name, double period);
@@ -81,8 +82,11 @@ private:
 
      // instantiating SVL stream and filters
     svlStreamManager            StreamManager;
+    svlStreamManager            *SaveStream;
     svlFilterImageOverlay       Overlay;
     svlFilterSourceVideoFile    Source;
+    svlFilterSourceVideoFile    source;
+    svlFilterVideoFileWriter    writer;
     svlOverlayTimestamp         * TimestampOverlay;
 
     std::string                 FileName;
@@ -96,6 +100,7 @@ private slots:
     void QSlotSetSaveStartClicked(void);
     void QSlotSetSaveEndClicked(void);
     void QSlotOpenFileClicked(void);
+    void QSlotSetRangeClicked(void);
 
 };
 

@@ -103,6 +103,8 @@ protected:
     mtsFunctionWrite SeekRequest;
     //the start and end of the data period in our system.
     mtsFunctionWrite UpdatePlayerInfo;
+    //tell the manager the local save range
+    mtsFunctionWrite UpdateSaveParams;
 
     struct {
         mtsFunctionRead IsSyncing;

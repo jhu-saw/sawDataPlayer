@@ -28,7 +28,8 @@ http://www.cisst.org/cisst/license.txt.
 CMN_IMPLEMENT_SERVICES(sdpPlayerParseStateTableData);
 
 sdpPlayerParseStateTableData::sdpPlayerParseStateTableData(const std::string & name)
-: mtsTaskContinuous(name)
+    : mtsTaskContinuous(name),
+    Ready(false)
 {
     StartRun = false;
 }
@@ -67,7 +68,8 @@ void sdpPlayerParseStateTableData::ParseHeader(std::string Path) {
     for (int i = 0; i < Header.NumberOfTotalFields; i++) {
         std::getline(inf, Temp);
         Header.Fields.push_back(Temp);
-    }    
+    }
+    Ready = true;
 #if 0
     std::cerr<<"/***************************************************************************/"<<std::endl;
     std::cerr<<"FilePath: "<<Header.FilePath<<  std::endl;

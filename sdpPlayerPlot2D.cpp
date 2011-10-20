@@ -167,29 +167,33 @@ void sdpPlayerPlot2D::Run(void)
             State = STOP;
         }
         else {
-            if((ZoomScaleValue)  > (TimeBoundary-Time )*(0.8) && TimeBoundary <  PlayUntilTime.Data){
-                Parser.LoadDataFromFile(TracePointer, Time, ZoomScaleValue, false);
-                //Parser.TriggerLoadDataFromFile(TracePointer, Time, ZoomScaleValue, false);
-                Parser.GetBoundary(TracePointer, TopBoundary, LowBoundary);
-                TimeBoundary  =TopBoundary;
+            if (Parser.IsReady()) {
+                if((ZoomScaleValue)  > (TimeBoundary-Time )*(0.8) && TimeBoundary <  PlayUntilTime.Data){
+                    Parser.LoadDataFromFile(TracePointer, Time, ZoomScaleValue, false);
+                    //Parser.TriggerLoadDataFromFile(TracePointer, Time, ZoomScaleValue, false);
+                    Parser.GetBoundary(TracePointer, TopBoundary, LowBoundary);
+                    TimeBoundary  =TopBoundary;
+                }
+                // update plot
+                UpdatePlot();
             }
-            // update plot
-            UpdatePlot();
         }
     }
     //make sure we are at the correct seek position.
     else if (State == SEEK) {
-        //// Everything here should be moved to Qt thread since we have to re-alloc a new Plot object
-        //size_t i = 0;
-        if(LastTime.Data != Time.Data ){          
-            LastTime = Time;
-            PlayStartTime = Time;
-            Parser.LoadDataFromFile(TracePointer, Time, ZoomScaleValue, true);
-            //Parser.TriggerLoadDataFromFile(TracePointer, Time, ZoomScaleValue, true);
-            Parser.GetBoundary(TracePointer, TopBoundary, LowBoundary);
-            TimeBoundary  =TopBoundary;
-            // update plot
-            UpdatePlot();
+        if (Parser.IsReady()) {
+            //// Everything here should be moved to Qt thread since we have to re-alloc a new Plot object
+            //size_t i = 0;
+            if(LastTime.Data != Time.Data ){
+                LastTime = Time;
+                PlayStartTime = Time;
+                Parser.LoadDataFromFile(TracePointer, Time, ZoomScaleValue, true);
+                //Parser.TriggerLoadDataFromFile(TracePointer, Time, ZoomScaleValue, true);
+                Parser.GetBoundary(TracePointer, TopBoundary, LowBoundary);
+                TimeBoundary  = TopBoundary;
+                // update plot
+                UpdatePlot();
+            }
         }
     }
     else if (State == STOP) {
@@ -424,7 +428,7 @@ void sdpPlayerPlot2D::OpenFile(void)
     if (!result.isNull()) {
 
         // read Data from file
-	    ExtractDataFromStateTableCSVFile(result);
+        ExtractDataFromStateTableCSVFile(result);
 
         Parser.GetBoundary(TracePointer,TopBoundary,LowBoundary);
         TimeBoundary = TopBoundary;

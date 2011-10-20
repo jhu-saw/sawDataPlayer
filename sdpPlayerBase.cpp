@@ -67,6 +67,7 @@ sdpPlayerBase::sdpPlayerBase(const std::string & name, double period):
         reqMan->AddFunction("SeekRequest",        SeekRequest);
         reqMan->AddFunction("StopRequest",        StopRequest);
         reqMan->AddFunction("UpdatePlayerInfo",   UpdatePlayerInfo);
+        reqMan->AddFunction("UpdateSaveParams",   UpdateSaveParams);
 
         reqMan->AddEventHandlerWrite(&sdpPlayerBase::PlayEventHandler,    this, "Play");
         reqMan->AddEventHandlerWrite(&sdpPlayerBase::StopEventHandler,    this, "Stop");

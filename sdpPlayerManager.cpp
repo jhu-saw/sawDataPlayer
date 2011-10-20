@@ -69,14 +69,14 @@ sdpPlayerManager::sdpPlayerManager(const std::string & name, double period):
         provided->AddCommandWrite(&sdpPlayerManager::SeekRequestHandler,   this, "SeekRequest", mtsDouble());
         provided->AddCommandWrite(&sdpPlayerManager::StopRequestHandler,   this, "StopRequest", mtsDouble());
         provided->AddCommandWrite(&sdpPlayerManager::UpdatePlayerInfoHandler,   this, "UpdatePlayerInfo", sdpPlayerDataInfo());
-        provided->AddCommandWrite(&sdpPlayerManager::SaveRequestHandler,   this, "SaveRequest", sdpSaveParameters());
+        provided->AddCommandWrite(&sdpPlayerManager::UpdateSaveParamsHandler,   this, "UpdateSaveParams", sdpSaveParameters());
 
         provided->AddCommandVoid(&sdpPlayerManager::QuitRequestHandler,   this, "QuitRequest");
 
         provided->AddEventWrite(Play, "Play", mtsDouble());
         provided->AddEventWrite(Stop, "Stop", mtsDouble());
         provided->AddEventWrite(Seek, "Seek", mtsDouble());
-        provided->AddEventWrite(Save, "Save", SaveParameters);
+        provided->AddEventWrite(Save, "Save", sdpSaveParameters());
         provided->AddEventVoid(Quit, "Quit");
 
     }
@@ -236,11 +236,16 @@ void sdpPlayerManager::PlayRequestHandler(const mtsDouble & time)
 }
 
 
-void sdpPlayerManager::SaveRequestHandler(const sdpSaveParameters & saveParameters)
+void sdpPlayerManager::UpdateSaveParamsHandler(const sdpSaveParameters & saveParameters)
 {
     SaveParameters = saveParameters;
-    Save(SaveParameters);
-    CMN_LOG_CLASS_RUN_DEBUG << "SaveRequest received: " << saveParameters << std::endl;
+    //! @todo shall the path be updated also?  - this is not a thread safe way to update the params...but unlikely to be a problem
+    //SaveParameters.Path() = MgrWidget.PathLineEdit->text().toStdString();
+    //SaveParameters.Prefix() = MgrWidget.PrefixLineEdit->text().toStdString();
+    MgrWidget.SaveStartSpin->setValue(SaveParameters.Start());
+    MgrWidget.SaveEndSpin->setValue(SaveParameters.End());
+
+    CMN_LOG_CLASS_RUN_DEBUG << "UpdateSaveParams received: " << saveParameters << std::endl;
 
 }
 
@@ -331,6 +336,7 @@ void sdpPlayerManager::QSlotSaveClicked()
     SaveParameters.Start() = MgrWidget.SaveStartSpin->value();
     SaveParameters.End() = MgrWidget.SaveEndSpin->value();
     Save(SaveParameters);
+    CMN_LOG_RUN_VERBOSE << "Save called with " << SaveParameters <<std::endl;
 }
 
 

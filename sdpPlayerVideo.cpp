@@ -30,6 +30,7 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <cisstOSAbstraction/osaGetTime.h>
 #include <cisstStereoVision/svlFilterOutput.h>
+#include <cisstOSAbstraction/osaSleep.h>
 
 CMN_IMPLEMENT_SERVICES(sdpPlayerVideo);
 
@@ -50,6 +51,7 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     CentralLayout->addWidget(VideoWidget, 0, 0, 1, 4);
     CentralLayout->addWidget(&Widget,1,1,1,1);
 
+    SaveStream = new svlStreamManager(8);
 }
 
 
@@ -80,6 +82,8 @@ void sdpPlayerVideo::MakeQTConnections(void)
 
     QObject::connect(ExWidget.OpenFileButton, SIGNAL(clicked()),
                      this, SLOT( QSlotOpenFileClicked()) );
+    QObject::connect(ExWidget.SetRangeButton, SIGNAL(clicked()),
+                     this, SLOT( QSlotSetRangeClicked()) );
 
 }
 
@@ -125,7 +129,7 @@ void sdpPlayerVideo::Run(void)
         else {
             //Load and Prep current data
             //source.Play();
-            CMN_LOG_CLASS_RUN_WARNING<<"pos: "<<Source.GetPositionAtTime(Time.Data)<<std::endl;
+            //CMN_LOG_CLASS_RUN_WARNING<<"pos: "<<Source.GetPositionAtTime(Time.Data)<<std::endl;
             //CMN_LOG_CLASS_RUN_WARNING<<"at T: "<<source.GetTimeAtPosition(source.GetPositionAtTime(Time.Data))<<std::endl;
             Source.SetPosition(Source.GetPositionAtTime(Time.Data));
             Source.Play();
@@ -135,7 +139,7 @@ void sdpPlayerVideo::Run(void)
     else if (State == SEEK) {
         //Load and Prep current data
         // CMN_LOG_CLASS_RUN_WARNING<<"pos: "<<source.GetPositionAtTime(Time.Data)<<std::endl;
-        CMN_LOG_CLASS_RUN_WARNING<<"at T: "<<Source.GetTimeAtPosition(Source.GetPositionAtTime(Time.Data))<<std::endl;
+        //CMN_LOG_CLASS_RUN_WARNING<<"at T: "<<Source.GetTimeAtPosition(Source.GetPositionAtTime(Time.Data))<<std::endl;
         Source.SetPosition(Source.GetPositionAtTime(Time.Data));
         Source.Play();
     }
@@ -210,88 +214,98 @@ void sdpPlayerVideo::Seek(const mtsDouble & time)
 
 void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
 {
+     //std::cout<< "Save " << saveParameters << std::endl;
     if (Sync) {
         CMN_LOG_CLASS_RUN_VERBOSE << "Save " << saveParameters << std::endl;
 
-        svlStreamManager            stream(8);
-        svlFilterSourceVideoFile    source(1);
-        svlFilterVideoFileWriter    writer;
+        source.SetChannelCount(1);
 
-        if (Source.SetFilePath(FileName) != SVL_OK) {
+
+        if (source.SetFilePath(FileName) != SVL_OK) {
             CMN_LOG_CLASS_RUN_ERROR << std::endl << "Wrong file name... " << std::endl;
             return;
         }
 
-        source.SetTargetFrequency(1000.0); // as fast as possible
-        source.SetLoop(false);
-        source.SetRange(source.GetPositionAtTime(saveParameters.Start()),source.GetPositionAtTime(saveParameters.Start()));
+        svlVideoCodecBase* codec = svlVideoIO::GetCodec(".cvi");
+        if (!codec) {
+            CMN_LOG_CLASS_RUN_VERBOSE << "`StartRecording` error: failed to initialize `CVI` video codec" << std::endl;
+            return;
+        }
+        svlVideoIO::Compression* compression = codec->GetCompression();
+        if (!compression) {
+            CMN_LOG_CLASS_RUN_VERBOSE << "`StartRecording` error: failed to get `CVI` video compression parameters" << std::endl;
+            return;
+        }
+        compression->data[0] = 4; // compression level
 
-        std::string date;
-        osaGetDateTimeString(date);
-        writer.SetFilePath(date +"_"+ FileName);
+        std::string dateandtime;
+        osaGetDateTimeString(dateandtime);
 
-        //        // setup vi
-        //        deo file writer
-        //        if (dst_path.empty()) {
-        //               if (writer.DialogOpenFile() != SVL_OK) {
-        //                   cerr << " -!- No destination file has been selected." << endl;
-        //                   return -1;
-        //               }
-        //               writer.GetFilePath(dst_path);
-        //           }
-        //           else {
-        //               if (!loadcodec || writer.LoadCodec("codec.dat") != SVL_OK) {
-        //                   writer.DialogCodec(dst_path);
-        //               }
-        //               writer.OpenFile(dst_path);
-        //           }
-        //           if (loadcodec) {
-        //               writer.SaveCodec("codec.dat");
-        //           }
-        //           std::string encoder;
-        //           writer.GetCodecName(encoder);
+        std::stringstream videofilename;
 
+        videofilename << saveParameters.Path().Data <<saveParameters.Prefix().Data <<"_"<< dateandtime << ".cvi";
+
+        CMN_LOG_CLASS_RUN_VERBOSE << "`Start Recording`: setting up video file `" << videofilename.str() << "`" << std::endl;
+
+        writer.SetFilePath(videofilename.str(), 0);
+        writer.SetCodecParams(compression, 0);
+        writer.OpenFile(0);
+
+        svlVideoIO::ReleaseCompression(compression);
+        svlVideoIO::ReleaseCodec(codec);
+
+        CMN_LOG_CLASS_RUN_VERBOSE << "Converting: '" << FileName << "' to '" << videofilename.str()  << std::endl;
+
+        writer.Record();
 
         // chain filters to pipeline
         svlFilterOutput* output = 0;
 
-        stream.SetSourceFilter(&source);
+        SaveStream->SetSourceFilter(&source);
         output = source.GetOutput();
 
         output->Connect(writer.GetInput());
 
-        CMN_LOG_CLASS_RUN_VERBOSE << "Converting: '" << FileName << "' to '" << date+"_"+FileName << std::endl;
+        CMN_LOG_CLASS_RUN_VERBOSE << "Converting: '" << FileName << "' to '" <<  videofilename.str()  << std::endl;
 
         // initialize stream
-        if (stream.Initialize() != SVL_OK) {
-
-            CMN_LOG_CLASS_RUN_ERROR << "Failed when converting: '" << FileName << "' to '" << date+"_"+FileName << std::endl;
-
+        if (SaveStream->Initialize() != SVL_OK) {
+            CMN_LOG_CLASS_RUN_ERROR << "Failed when converting: '" << FileName << "' to '" << videofilename.str()  << std::endl;
+            return;
         }
 
-        // start stream
-        if (stream.Play() != SVL_OK) {
+        source.SetRange(source.GetPositionAtTime(saveParameters.Start()),source.GetPositionAtTime(saveParameters.End()));
+        source.SetTargetFrequency(1000.0); // as fast as possible
+        source.SetLoop(false);
 
-            CMN_LOG_CLASS_RUN_ERROR << "Failed when converting: '" << FileName << "' to '" << date+"_"+FileName << std::endl;
+        // start stream
+        if (SaveStream->Play() != SVL_OK) {
+            CMN_LOG_CLASS_RUN_ERROR << "Failed when converting: '" << FileName << "' to '" << videofilename<< std::endl;
+            return;
         }
 
         do {
-            CMN_LOG_CLASS_RUN_VERBOSE << " > Frames processed: " << source.GetFrameCounter() << "     \r";
-        } while (stream.IsRunning() && stream.WaitForStop(0.5) == SVL_WAIT_TIMEOUT);
+            cerr << " > Frames processed: " << source.GetFrameCounter() << "     \r";
+        } while (SaveStream->IsRunning() && SaveStream->WaitForStop(0.5) == SVL_WAIT_TIMEOUT);
 
-        CMN_LOG_CLASS_RUN_VERBOSE << " > Frames processed: " << source.GetFrameCounter() << "           " << std::endl;
+       CMN_LOG_CLASS_RUN_VERBOSE << " > Frames processed: " << source.GetFrameCounter() << "           " << std::endl;
 
-        if (stream.GetStreamStatus() < 0) {
+        if (SaveStream->GetStreamStatus() < 0) {
             // Some error
             CMN_LOG_CLASS_RUN_ERROR << " -!- Error occured during conversion." << std::endl;
         }
         else {
             // Success
-             CMN_LOG_CLASS_RUN_VERBOSE << " > Conversion done." << std::endl;
+            CMN_LOG_CLASS_RUN_VERBOSE << " > Conversion done." << std::endl;
         }
+       // CMN_LOG_CLASS_RUN_VERBOSE << "Converted: '" << FileName << "' to '" <<  videofilename.str()  << std::endl;
 
+        SaveStream->Stop();
         // release pipeline
-        stream.Release();
+        CMN_LOG_CLASS_RUN_VERBOSE << "Releasing Pipeline" <<std::endl;
+        SaveStream->Release();
+        CMN_LOG_CLASS_RUN_VERBOSE << "Released Pipeline" <<std::endl;
+        osaSleep(2);
     }
 }
 
@@ -457,5 +471,13 @@ void sdpPlayerVideo::SetSynced(bool isSynced) {
 
 }
 
+
+void sdpPlayerVideo::QSlotSetRangeClicked(void) {
+
+      SaveParameters.Start() = ExWidget.SaveStartSpin->value();
+      SaveParameters.End() = ExWidget.SaveEndSpin->value();
+
+      UpdateSaveParams(SaveParameters);
+}
 
 

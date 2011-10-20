@@ -51,6 +51,7 @@ public:
     void SetSynced(bool isSynced);
 
 
+
 private:
     Ui::sdpPlayerWidget ExWidget;
     QWidget * mainWidget;
@@ -65,6 +66,7 @@ private:
     std::vector <double> *Data;
 
     double TopBoundary, LowBoundary;
+
 
 
     // PoolPoint is pointing to ping pong buffer

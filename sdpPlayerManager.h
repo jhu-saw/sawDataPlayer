@@ -113,7 +113,7 @@ private:
     void StopRequestHandler(const mtsDouble & time);
     void SeekRequestHandler(const mtsDouble & time);
     void PlayRequestHandler(const mtsDouble & time);
-    void SaveRequestHandler(const sdpSaveParameters & saveParameters);
+    void UpdateSaveParamsHandler(const sdpSaveParameters & saveParameters);
     void QuitRequestHandler(void);
     void UpdatePlayerInfoHandler(const sdpPlayerDataInfo & info);
 

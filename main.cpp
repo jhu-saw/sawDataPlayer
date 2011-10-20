@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
    // log configuration
     cmnLogger::SetMask(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskDefaultLog(CMN_LOG_ALLOW_ALL);
-   // cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
-    cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_DEBUG);
+//    cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
+    cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_ALL);
 
 
     // create our components

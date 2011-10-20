@@ -70,11 +70,18 @@ public:
     void GetBeginEndTime(double &Begin, double &End);
     size_t GetDataPoisitionFromFile(double Data, int FieldNumber);
 
+
+    //indicates if the pareses has opened a file and is ready to read data.
+    bool IsReady(void) { return Ready;}
+
     // Test Function, remove later
     void TestIndex(void);
+
 private:
     typedef vctDynamicVector<double> TimeField;
     typedef vctDynamicVector<double> DataField;
+
+    bool Ready;
 
     std::string DataFieldForSearch;
     std::string TimeFieldForSearch;
