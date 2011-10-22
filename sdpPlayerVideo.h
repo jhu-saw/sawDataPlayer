@@ -78,7 +78,7 @@ private:
     void LoadData(void);
     void UpdateLimits(void);
 
-    void SetupPipeline(const std::string &filename);
+    void SetupPipeline();
 
     QWidget MainWindow;
     svlFilterImageOpenGLQtWidget * VideoWidget;

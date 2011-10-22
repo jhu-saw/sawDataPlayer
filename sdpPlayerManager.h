@@ -110,6 +110,8 @@ private:
     //Payload : prmSaveParamaters
     mtsFunctionVoid Quit;
 
+    mtsFunctionVoid ShowAll;
+
     void StopRequestHandler(const mtsDouble & time);
     void SeekRequestHandler(const mtsDouble & time);
     void PlayRequestHandler(const mtsDouble & time);
@@ -121,7 +123,7 @@ private:
     //! /todo how to update the player who has just come online???
     //    void SyncRequestHandler(const mtsDouble &time);
 
-    osaTimeServer TimeServer;
+    const osaTimeServer  *TimeServer;
     QErrorMessage * ErrorMessageDialog;
     void ErrorMessage(const std::string & message);
 
@@ -144,6 +146,10 @@ public slots:
     void QSlotUpdateQT(void) {
         UpdateQT();
     };
+
+    void QSlotShowAll() {
+        ShowAll();
+    }
 
 signals:
     //emit this signal in order to

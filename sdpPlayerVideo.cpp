@@ -38,10 +38,9 @@ CMN_IMPLEMENT_SERVICES(sdpPlayerVideo);
 
 sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     sdpPlayerBase(name,period),
+    StreamManager(2),
     TimestampOverlay(0)
 {
-    // create the user interface
-    // create the user interface
     ExWidget.setupUi(&Widget);
     VideoWidget = new svlFilterImageOpenGLQtWidget();
     VideoWidget->SetEnableToolTip(true);
@@ -274,12 +273,9 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
         }
         compression->data[0] = 4; // compression level
 
-        std::string dateandtime;
-        osaGetDateTimeString(dateandtime);
-
         std::stringstream videofilename;
 
-        videofilename << saveParameters.Path().Data <<saveParameters.Prefix().Data <<"_"<< dateandtime << ".cvi";
+        videofilename << std::setprecision(3) << std::fixed << saveParameters.Path().Data <<saveParameters.Prefix().Data <<"_"<< saveParameters.Start() << ".cvi";
 
         CMN_LOG_CLASS_RUN_VERBOSE << "`Start Recording`: setting up video file `" << videofilename.str() << "`" << std::endl;
 
@@ -305,13 +301,14 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
 
         output->Connect(writer->GetInput());
 
-        CMN_LOG_CLASS_RUN_VERBOSE << "Converting: '" << FileName << "' to '" <<  videofilename.str()  << std::endl;
 
         // initialize stream
         if (SaveStream->Initialize() != SVL_OK) {
             CMN_LOG_CLASS_RUN_ERROR << "Failed when converting: '" << FileName << "' to '" << videofilename.str()  << std::endl;
             return;
         }
+
+        CMN_LOG_CLASS_RUN_VERBOSE << "Converting: '" << FileName << "' to '" <<  videofilename.str()  << std::endl;
 
         source->SetRange(source->GetPositionAtTime(saveParameters.Start()),source->GetPositionAtTime(saveParameters.End()));
         source->SetTargetFrequency(1000.0); // as fast as possible
@@ -416,14 +413,7 @@ void sdpPlayerVideo::QSlotStopClicked(void)
 void sdpPlayerVideo::LoadData(void)
 {
 
-    QString fileName = QFileDialog::getOpenFileName(&Widget, tr("Select video file"),tr("./"),tr("Audio (*.cvi *.avi *.mpg *.mov *.mpeg)"));
-
-    if (fileName.isEmpty()) {
-        CMN_LOG_CLASS_RUN_WARNING<<"File not selected, no data to load"<<std::endl;
-        return;
-    }
-
-    SetupPipeline(fileName.toStdString());
+    SetupPipeline();
 
     vctInt2 range;
 
@@ -463,7 +453,19 @@ void sdpPlayerVideo::QSlotSetSaveEndClicked(void)
 
 void sdpPlayerVideo::QSlotOpenFileClicked(void){
 
-    LoadData();
+
+    QString fileName = QFileDialog::getOpenFileName(&Widget, tr("Select video file"),tr("./"),tr("Audio (*.cvi *.avi *.mpg *.mov *.mpeg)"));
+
+    FileName = fileName.toStdString();
+
+    if (fileName.isEmpty()) {
+        CMN_LOG_CLASS_RUN_WARNING<<"File not selected, no data to load"<<std::endl;
+        return;
+    }
+
+
+
+    BaseAccess.LoadData();
 
 }
 
@@ -480,18 +482,16 @@ void sdpPlayerVideo::UpdateLimits()
 }
 
 
-void sdpPlayerVideo::SetupPipeline(const std::string &filename)
+void sdpPlayerVideo::SetupPipeline(void)
 {
 
     StreamManager.Release();
     Source.SetChannelCount(1);
 
-    if (Source.SetFilePath(filename) != SVL_OK) {
+    if (Source.SetFilePath(FileName) != SVL_OK) {
         CMN_LOG_CLASS_RUN_ERROR << std::endl << "Wrong file name... " << std::endl;
         return;
     }
-
-    FileName = filename;
 
     if (!TimestampOverlay) {
 
@@ -554,20 +554,23 @@ void sdpPlayerVideo::QSlotCropButtonClicked(bool checked) {
 
     if (checked)
     {
+
+        //! @todo check if these are logical.
         CropRect = svlRect(LeftSpinBox->value(),TopSpinBox->value(),RightSpinBox->value(),BottomSpinBox->value());
+
         CMN_LOG_CLASS_RUN_VERBOSE<<"Crop set to :"<<
                                    LeftSpinBox->value()<<","<<
                                    TopSpinBox->value()<<","<<
                                    RightSpinBox->value()<<","<<
                                    BottomSpinBox->value()<<std::endl;
 
-        SetupPipeline(FileName);
+        SetupPipeline();
 
         CropButton->setText("CropEnabled");
     }
     else {
 
-        SetupPipeline(FileName);
+        SetupPipeline();
         CropButton->setText("CropDisabled");
     }
 }

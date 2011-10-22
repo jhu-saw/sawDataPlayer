@@ -114,6 +114,7 @@ protected:
         mtsFunctionRead GetPlayStartTime;
         mtsFunctionRead GetPlayerDataInfo;
         mtsFunctionRead GetPlayUntilTime;
+        mtsFunctionVoid LoadData;
     } BaseAccess;
 
     //The following functions are callbacks are called by the playerManager
@@ -123,6 +124,7 @@ protected:
     virtual void Play(const mtsDouble & time) = 0;
     virtual void Save(const sdpSaveParameters & saveParameters) = 0;
     virtual void Quit(void) = 0;
+
     //by calling "emit QSignalUpdateQT" this function will be called.
     //used this to udpate qt widgets in a thread safe way.
     virtual void UpdateQT(void) {};
@@ -143,6 +145,8 @@ protected:
     // void closeEvent(QCloseEvent *event) ;
 
     bool HasRunOnce;
+
+    virtual void LoadData(void) = 0;
 
 private:
     //These are event handlers that call their cooresponding virtual functions.
@@ -169,6 +173,12 @@ private:
         Quit();
     }
 
+    //! @todo need to prevent the user from clicking close...right now this does not work well.
+    virtual void ShowEventHandler(void) {
+        QMetaObject::invokeMethod(this, "QSlotShowQT", Qt::QueuedConnection);
+    }
+
+
 public slots:
 
 
@@ -176,11 +186,15 @@ public slots:
         UpdateQT();
     };
 
+    void QSlotShowQT(void) {
+        Widget.show();
+    }
 
 signals:
 
-    //emit this signal in order to
+    //emit this signal in order to update all the qt widgets
     void QSignalUpdateQT(void);
+
 
 };
 

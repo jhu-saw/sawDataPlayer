@@ -34,7 +34,8 @@ sdpPlayerManager::sdpPlayerManager(const std::string & name, double period):
     Time(0),
     DataStartTime(0),
     DataEndTime(0),
-    PlayStartTime(0)
+    PlayStartTime(0),
+    TimeServer(0)
 {
     SaveParameters.Start() = 0;
     SaveParameters.End() = 0;
@@ -77,6 +78,8 @@ sdpPlayerManager::sdpPlayerManager(const std::string & name, double period):
         provided->AddEventWrite(Stop, "Stop", mtsDouble());
         provided->AddEventWrite(Seek, "Seek", mtsDouble());
         provided->AddEventWrite(Save, "Save", sdpSaveParameters());
+        provided->AddEventVoid(ShowAll, "Show");
+
         provided->AddEventVoid(Quit, "Quit");
 
     }
@@ -87,7 +90,7 @@ sdpPlayerManager::sdpPlayerManager(const std::string & name, double period):
     QStringList list = (QStringList() << tr("Player") << tr("Start") << tr("End") );
     MgrWidget.PlayerTable->setHorizontalHeaderLabels(list);
 
-    TimeServer = mtsTaskManager::GetInstance()->GetTimeServer();
+    TimeServer = &(mtsTaskManager::GetInstance()->GetTimeServer());
 }
 
 
@@ -121,6 +124,10 @@ void sdpPlayerManager::MakeQTConnections(void)
 
     QObject::connect(this, SIGNAL(QSignalUpdateQT()),
                      this, SLOT( QSlotUpdateQT()) );
+
+    QObject::connect(MgrWidget.ShowAllButton, SIGNAL(clicked()),
+                     this, SLOT( QSlotShowAll()) );
+
 }
 
 
@@ -175,7 +182,7 @@ void sdpPlayerManager::Run(void)
     }
 
     if (State == PLAY) {
-        double currentTime = TimeServer.GetAbsoluteTimeInSeconds();
+        double currentTime = TimeServer->GetAbsoluteTimeInSeconds();
         Time = currentTime - PlayStartTime.Timestamp() + PlayStartTime.Data;
         if (Time > PlayUntilTime) { //stop
             Time = PlayUntilTime;
@@ -318,7 +325,7 @@ void sdpPlayerManager::QuitRequestHandler(void)
 void sdpPlayerManager::QSlotPlayClicked()
 {
     mtsDouble playTime = Time; //this should be read from the state table!!!
-    playTime.Timestamp() = TimeServer.GetAbsoluteTimeInSeconds();
+    playTime.Timestamp() = TimeServer->GetAbsoluteTimeInSeconds();
     PlayRequestHandler(playTime);
 }
 

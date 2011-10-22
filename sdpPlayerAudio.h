@@ -33,6 +33,8 @@ http://www.cisst.org/cisst/license.txt.
 
 //! todo Think about the thread safety issue. (At the moment, mtscommands and qslots can manipulte same data at the same time)
 //! If the data processing is not heavy we can use the main QT thread via QTimer and mtsTaskFromCallback, or add more mtsFunction calls.
+//! for example if we load audio file and presss play at the same time, then not all the data could be laoded which
+//! can cause a segfault.
 
 // Always include last
 #include "sdpExport.h"
@@ -73,6 +75,7 @@ private:
     void Quit(void);
 
 
+    //not thread safe, use baseaccess to execute in mts thread.
     void LoadData(void);
     void UpdateLimits(void);
 
@@ -89,6 +92,7 @@ private:
     QSlider                     *VolumeSlider;
 
     osaOpenAL                   Audio;
+    std::string                 FileName;
 
 private slots:
 
@@ -100,6 +104,7 @@ private slots:
     void QSlotSetSaveEndClicked(void);
     void QSlotOpenFileClicked(void);
     void QSlotVolumeSliderMoved(int v);
+    void QSlotSetRangeClicked(void);
 
 signals:
    void QSignalUpdateRange(void);

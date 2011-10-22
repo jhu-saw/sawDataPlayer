@@ -55,6 +55,7 @@ sdpPlayerBase::sdpPlayerBase(const std::string & name, double period):
         provided->AddCommandReadState(StateTable, State,        "GetState");
         provided->AddCommandReadState(StateTable, Time,         "GetTime");
         provided->AddCommandWrite(&sdpPlayerBase::SetTime, this, "WriteTime", mtsDouble());
+        provided->AddCommandVoid(&sdpPlayerBase::LoadData, this, "LoadData");
         provided->AddCommandReadState(StateTable, PlayStartTime,   "GetPlayStartTime");
         provided->AddCommandReadState(StateTable, PlayerDataInfo,   "GetPlayerDataInfo");
         provided->AddCommandReadState(StateTable, PlayUntilTime,   "GetPlayUntilTime");
@@ -74,6 +75,8 @@ sdpPlayerBase::sdpPlayerBase(const std::string & name, double period):
         reqMan->AddEventHandlerWrite(&sdpPlayerBase::SeekEventHandler,    this, "Seek");
         reqMan->AddEventHandlerWrite(&sdpPlayerBase::SaveEventHandler,    this, "Save");
         reqMan->AddEventHandlerVoid(&sdpPlayerBase::QuitEventHandler,     this, "Quit");
+        reqMan->AddEventHandlerVoid(&sdpPlayerBase::ShowEventHandler,     this, "Show");
+
 
     }
 
@@ -88,6 +91,8 @@ sdpPlayerBase::sdpPlayerBase(const std::string & name, double period):
         interfaceRequired->AddFunction("GetPlayStartTime", BaseAccess.GetPlayStartTime);
         interfaceRequired->AddFunction("GetPlayerDataInfo", BaseAccess.GetPlayerDataInfo);
         interfaceRequired->AddFunction("GetPlayUntilTime", BaseAccess.GetPlayUntilTime);
+        interfaceRequired->AddFunction("LoadData", BaseAccess.LoadData);
+
     }
 
     TimeServer = mtsTaskManager::GetInstance()->GetTimeServer();
@@ -96,6 +101,8 @@ sdpPlayerBase::sdpPlayerBase(const std::string & name, double period):
     QObject::connect(this, SIGNAL(QSignalUpdateQT()),
                      this, SLOT( QSlotUpdateQT()) );
 
+//    QObject::connect(this, SIGNAL(QSignalShowQT()),
+//                     this, SLOT( QSlotShowQT()));
 
 }
 
@@ -138,3 +145,5 @@ bool sdpPlayerBase::SetInRange(double &time) {
 void sdpPlayerBase::SetTime(const mtsDouble &time){
     Time = time;
 }
+
+

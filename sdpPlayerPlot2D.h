@@ -67,6 +67,8 @@ private:
 
     double TopBoundary, LowBoundary;
 
+    QDoubleSpinBox *UpperYSpinBox;
+    QDoubleSpinBox *LowerYSpinBox;
 
 
     // PoolPoint is pointing to ping pong buffer
@@ -106,8 +108,10 @@ private:
     void UpdateLimits(void);
 
     void OpenFile(void);
-    bool ExtractDataFromStateTableCSVFile(QString & path);
+    bool ExtractDataFromStateTableCSVFile(std::string & path);
     void ResetPlayer(void);
+
+    std::string FileName;
 
 private slots:
     void QSlotSeekSliderMoved(int c);
@@ -118,6 +122,8 @@ private slots:
     void QSlotSetSaveEndClicked(void);
     void QSlotOpenFileClicked(void);
     void QSlotSpinBoxValueChanged(double);
+    void QSlotUpperYRangeSpinChanged(double);
+    void QSlotLowerYRangeSpinChanged(double);
 };
 
 CMN_DECLARE_SERVICES_INSTANTIATION(sdpPlayerPlot2D);

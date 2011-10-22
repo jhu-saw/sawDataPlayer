@@ -69,6 +69,7 @@ private:
 
 
 private slots:
+    //call only mtsfunctions from these, don't access data directly.
     void QSlotSeekSliderMoved(int c);
     void QSlotSyncCheck(bool checked);
     void QSlotPlayClicked(void);

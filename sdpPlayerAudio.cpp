@@ -29,6 +29,8 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <cisstOSAbstraction/osaGetTime.h>
 #include <cisstStereoVision/svlFilterOutput.h>
+#include <QMessageBox>
+
 
 CMN_IMPLEMENT_SERVICES(sdpPlayerAudio);
 
@@ -114,6 +116,9 @@ void sdpPlayerAudio::MakeQTConnections(void)
 
     QObject::connect(VolumeSlider, SIGNAL(sliderMoved(int)),
                      this, SLOT(QSlotVolumeSliderMoved(int)));
+
+    QObject::connect(ExWidget.SetRangeButton, SIGNAL(clicked()),
+                     this, SLOT( QSlotSetRangeClicked()) );
 
 }
 
@@ -250,8 +255,20 @@ void sdpPlayerAudio::Seek(const mtsDouble & time)
 
 void sdpPlayerAudio::Save(const sdpSaveParameters & saveParameters)
 {
+
+     CMN_LOG_CLASS_RUN_ERROR << "Save " << saveParameters << std::endl;
     if (Sync) {
-        CMN_LOG_CLASS_RUN_DEBUG << "Save " << saveParameters << std::endl;
+        CMN_LOG_CLASS_RUN_VERBOSE << "Save " << saveParameters << std::endl;
+
+        std::stringstream audiofilenameStrm;
+
+        audiofilenameStrm << saveParameters.Path().Data <<saveParameters.Prefix().Data;
+
+        CMN_LOG_CLASS_RUN_VERBOSE << "`Save`: setting up save audio file with prefix: `" << audiofilenameStrm.str() << "`" << std::endl;
+
+        Audio.SaveClip(audiofilenameStrm.str(),saveParameters.Start(), saveParameters.End());
+        //QMessageBox::critical(this->GetWidget(), tr(GetName().c_str()),tr("Saved Audio file"));
+
     }
 }
 
@@ -314,14 +331,7 @@ void sdpPlayerAudio::QSlotStopClicked(void)
 void sdpPlayerAudio::LoadData(void)
 {
 
-    QString fileName = QFileDialog::getOpenFileName(&Widget, tr("Select video file"),tr("./"),tr("Audio (*.wav)"));
-
-    if (fileName.isEmpty()) {
-        CMN_LOG_CLASS_RUN_WARNING<<"File not selected, no data to load"<<std::endl;
-        return;
-    }
-
-    Audio.OpenFile(fileName.toStdString());
+    Audio.OpenFile(FileName);
 
     PlayerDataInfo.DataStart()  = Audio.GetStartTime();
     PlayerDataInfo.DataEnd()    = Audio.GetEndTime();
@@ -354,10 +364,16 @@ void sdpPlayerAudio::QSlotSetSaveEndClicked(void)
     ExWidget.SaveEndSpin->setValue(Time.Data);
 }
 
-
 void sdpPlayerAudio::QSlotOpenFileClicked(void){
 
-    LoadData();
+    QString fileName = QFileDialog::getOpenFileName(&Widget, tr("Select video file"),tr("./"),tr("Audio (*.wav)"));
+
+    FileName = fileName.toStdString();
+    if (FileName.empty()) {
+        CMN_LOG_CLASS_RUN_WARNING<<"File not selected, no data to load"<<std::endl;
+        return;
+    }
+    BaseAccess.LoadData();
 
 }
 
@@ -378,7 +394,6 @@ void sdpPlayerAudio::SetSynced(bool isSynced) {
 
     ExWidget.SyncCheck->setChecked(isSynced);
     Sync = isSynced;
-
 }
 
 
@@ -387,3 +402,12 @@ void sdpPlayerAudio::QSlotVolumeSliderMoved(int v) {
     mtsDouble vol(v/100.0);
     Audio.SetVolume(vol);
 }
+
+void sdpPlayerAudio::QSlotSetRangeClicked(void) {
+
+      SaveParameters.Start() = ExWidget.SaveStartSpin->value();
+      SaveParameters.End() = ExWidget.SaveEndSpin->value();
+
+      UpdateSaveParams(SaveParameters);
+}
+

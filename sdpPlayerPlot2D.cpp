@@ -54,16 +54,31 @@ sdpPlayerPlot2D::sdpPlayerPlot2D(const std::string & name, double period):
     TracePointer = Plot->AddTrace("Data");
     VerticalLinePointer = Plot->AddVerticalLine("X");
 
+    QLabel *upperLabel = new QLabel(mainWidget);
+    upperLabel->setText("UpperY");
+    QLabel *lowerLabel = new QLabel(mainWidget);
+    lowerLabel->setText("LowerY");
+    UpperYSpinBox  = new QDoubleSpinBox(&Widget);
+    LowerYSpinBox  = new QDoubleSpinBox(&Widget);
+
+    LowerYSpinBox->setValue(0);
+    UpperYSpinBox->setValue(20);
+
     CentralLayout = new QGridLayout(mainWidget);
 
     CentralLayout->setContentsMargins(0, 0, 0, 0);
     CentralLayout->setRowStretch(0, 1);
     CentralLayout->setColumnStretch(1, 1);
-    CentralLayout->addWidget(Plot, 0, 0, 1, 2);
-    CentralLayout->addWidget(ScaleZoom, 1, 1, 1, 2);
+    CentralLayout->addWidget(Plot, 0, 0, 1, 6);
     CentralLayout->addWidget(ZoomInOut, 1, 0, 1, 1);
+    CentralLayout->addWidget(ScaleZoom, 1, 1, 1, 1);
+    CentralLayout->addWidget(lowerLabel,1,2,1,1);
+    CentralLayout->addWidget(LowerYSpinBox,1,3,1,1);
+    CentralLayout->addWidget(upperLabel,1,4,1,1);
+    CentralLayout->addWidget(UpperYSpinBox,1,5,1,1);
 
-    CentralLayout->addWidget(this->GetWidget(),2,0,4,4);
+    CentralLayout->addWidget(this->GetWidget(),2,0,1,6);
+
     mainWidget->resize(300,500);
 
     // Add elements to state table
@@ -79,10 +94,10 @@ sdpPlayerPlot2D::sdpPlayerPlot2D(const std::string & name, double period):
     // Connect to ourself, for Qt Thread
 
     mtsInterfaceRequired * interfaceRequired = AddInterfaceRequired("Get2DPlotStatus");
-    if (interfaceRequired) {        
-        interfaceRequired->AddFunction("GetZoomScale", Plot2DAccess.GetZoomScale);        
+    if (interfaceRequired) {
+        interfaceRequired->AddFunction("GetZoomScale", Plot2DAccess.GetZoomScale);
         interfaceRequired->AddFunction("GetVectorIndex", Plot2DAccess.GetVectorIndex);
-        interfaceRequired->AddFunction("SetVectorIndex",  Plot2DAccess.WriteVectorIndex);        
+        interfaceRequired->AddFunction("SetVectorIndex",  Plot2DAccess.WriteVectorIndex);
     }
 
     ZoomScaleValue = 1;
@@ -127,6 +142,15 @@ void sdpPlayerPlot2D::MakeQTConnections(void)
 
     QObject::connect(ScaleZoom , SIGNAL(valueChanged(double)),
                      this, SLOT(QSlotSpinBoxValueChanged(double)));
+
+
+    QObject::connect(UpperYSpinBox , SIGNAL(valueChanged(double)),
+                     this, SLOT(QSlotUpperYRangeSpinChanged(double)));
+
+    QObject::connect(LowerYSpinBox , SIGNAL(valueChanged(double)),
+                     this, SLOT(QSlotLowerYRangeSpinChanged(double)));
+
+
 }
 
 
@@ -145,8 +169,8 @@ void sdpPlayerPlot2D::Configure(const std::string & CMN_UNUSED(filename))
 
 void sdpPlayerPlot2D::Startup(void)
 {
-    LoadData();
-    UpdateLimits();
+    //BaseAccess.LoadData();
+    //UpdateLimits();
 }
 
 
@@ -213,13 +237,15 @@ void sdpPlayerPlot2D::Run(void)
 
 void sdpPlayerPlot2D::UpdatePlot(void)
 {
-    double ScaleValue = 0.0; 
+    double ScaleValue = 0.0;
     mtsInt index;
 
-    Plot2DAccess.GetVectorIndex(index);       
+    Plot2DAccess.GetVectorIndex(index);
     Plot2DAccess.GetZoomScale(ScaleValue);
 
-    Plot->SetContinuousFitX(false);    
+    Plot->SetContinuousFitX(false);
+    Plot->SetContinuousFitY(false);
+    Plot->FitY(0, 20.0, 0);
     Plot->FitX(Time.Data-ScaleValue-PlayerDataInfo.DataStart() ,  Time.Data+ScaleValue-PlayerDataInfo.DataStart(), 0);
     VerticalLinePointer->SetX(Time.Data-PlayerDataInfo.DataStart());
     // UpdateGL should be called at Qt thread
@@ -238,7 +264,7 @@ void sdpPlayerPlot2D::UpdateQT(void)
         //update Plot in Qt Thread
         if(Plot)
             Plot->updateGL();
-    }    
+    }
     else if (State == STOP) {
         //Optional: Test if the data needs to be updated:
         ExWidget.TimeSlider->setValue((int)timevalue.Data);
@@ -246,13 +272,13 @@ void sdpPlayerPlot2D::UpdateQT(void)
         if(Plot)
             Plot->updateGL();
     }
-    else if (State == SEEK) {     
+    else if (State == SEEK) {
         //Optional: Test if the data needs to be updated:
         ExWidget.TimeSlider->setValue((int)timevalue.Data);
         //update Plot in Qt Thread
         if(Plot)
             Plot->updateGL();
-    }   
+    }
     CS.Leave();
     ExWidget.TimeLabel->setText(QString::number(timevalue.Data,'f', 3));
 }
@@ -312,7 +338,7 @@ void sdpPlayerPlot2D::Quit(void)
 void sdpPlayerPlot2D::QSlotPlayClicked(void)
 {
     mtsDouble playTime;
-    BaseAccess.GetTime(playTime);    
+    BaseAccess.GetTime(playTime);
     playTime.Timestamp() = TimeServer.GetAbsoluteTimeInSeconds();
 
     if (Sync) {
@@ -331,14 +357,14 @@ void sdpPlayerPlot2D::QSlotSeekSliderMoved(int c)
     mtsDouble t = c;
     static mtsDouble lasttime;
     if(lasttime.Data == t.Data)
-        return; 
+        return;
     else
         lasttime = t;
 
     if (Sync) {
-        SeekRequest(t);       
-    }         
-    State = SEEK;      
+        SeekRequest(t);
+    }
+    State = SEEK;
     Time = t ;
     PlayUntilTime = PlayerDataInfo.DataEnd();
 }
@@ -367,6 +393,7 @@ void sdpPlayerPlot2D::LoadData(void)
     //PlayerDataInfo.DataStart() = 1297723451.415;
     //PlayerDataInfo.DataEnd() = 1297723900.022;
 
+    OpenFile();
 
     if (Time.Data < PlayerDataInfo.DataStart()) {
         Time = PlayerDataInfo.DataStart();
@@ -402,10 +429,17 @@ void sdpPlayerPlot2D::QSlotSetSaveEndClicked(void)
 
 void sdpPlayerPlot2D::QSlotOpenFileClicked(void)
 {
-    // read data and update relatives
-    OpenFile();
-    LoadData();
-    UpdateLimits();
+    QString fileName = QFileDialog::getOpenFileName(mainWidget, "Open File", tr("./"), tr("Desc (*.desc)"));
+    FileName = fileName.toStdString();
+
+    if (fileName.isEmpty()) {
+        CMN_LOG_CLASS_RUN_WARNING<<"File not selected, no data to load"<<std::endl;
+        return;
+    }
+
+    // read data and update relative times
+    BaseAccess.LoadData();
+
 }
 
 
@@ -413,7 +447,7 @@ void sdpPlayerPlot2D::QSlotOpenFileClicked(void)
 void sdpPlayerPlot2D::QSlotSpinBoxValueChanged(double value)
 {
     ZoomScaleValue = value;
-    ScaleZoom->setValue(ZoomScaleValue);    
+    ScaleZoom->setValue(ZoomScaleValue);
     UpdatePlot();
 }
 
@@ -421,20 +455,17 @@ void sdpPlayerPlot2D::QSlotSpinBoxValueChanged(double value)
 // read data from file
 void sdpPlayerPlot2D::OpenFile(void)
 {
-   QString result;
-
-
-    result = QFileDialog::getOpenFileName(mainWidget, "Open File", tr("./"), tr("Desc (*.desc)"));
-    if (!result.isNull()) {
+    if (!FileName.empty()) {
 
         // read Data from file
-        ExtractDataFromStateTableCSVFile(result);
+        ExtractDataFromStateTableCSVFile(FileName);
 
         Parser.GetBoundary(TracePointer,TopBoundary,LowBoundary);
         TimeBoundary = TopBoundary;
         ResetPlayer();
         UpdatePlot();
         BaseAccess.WriteTime(LowBoundary);
+        UpdateLimits();
     }
 }
 
@@ -453,11 +484,11 @@ void sdpPlayerPlot2D::UpdateLimits()
 }
 
 
-bool sdpPlayerPlot2D::ExtractDataFromStateTableCSVFile(QString & path){
+bool sdpPlayerPlot2D::ExtractDataFromStateTableCSVFile(std::string & path){
 
     const std::string TimeFieldName("TimeStamp");
     const std::string DataFieldName("TipForceNorm_Nm");
-    std::string Path(path.toStdString());
+    std::string Path(path);
 
     // open header file
     Parser.ParseHeader(Path);
@@ -471,9 +502,9 @@ bool sdpPlayerPlot2D::ExtractDataFromStateTableCSVFile(QString & path){
 
     Parser.GetBoundary(TracePointer,TopBoundary,LowBoundary);
 
-    Parser.GetBeginEndTime(PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());    
-//    Data = &DataPool1;
-//    TimeStamps =&TimeStampsPool1;
+    Parser.GetBeginEndTime(PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
+    //    Data = &DataPool1;
+    //    TimeStamps =&TimeStampsPool1;
 
     return true;
 }
@@ -483,19 +514,32 @@ bool sdpPlayerPlot2D::ExtractDataFromStateTableCSVFile(QString & path){
 void sdpPlayerPlot2D::ResetPlayer(void)
 {    
     // set to maximun period we read
-    //ZoomScaleValue = (PlayerDataInfo.DataStart() != 0) ? ((PlayerDataInfo.DataEnd() - PlayerDataInfo.DataStart()) / 2.0) : 1.0 ;    
+    //ZoomScaleValue = (PlayerDataInfo.DataStart() != 0) ? ((PlayerDataInfo.DataEnd() - PlayerDataInfo.DataStart()) / 2.0) : 1.0 ;
     //if(TimeStamps->size() != 0)
-    //    ZoomScaleValue = (TimeStamps->at(TimeStamps->size()-1) - TimeStamps->at(0))/2.0;   
+    //    ZoomScaleValue = (TimeStamps->at(TimeStamps->size()-1) - TimeStamps->at(0))/2.0;
 
-    ScaleZoom->setValue(ZoomScaleValue);    
+    ScaleZoom->setValue(ZoomScaleValue);
     BaseAccess.WriteTime(0.0);
-    Plot2DAccess.WriteVectorIndex(0); 
+    Plot2DAccess.WriteVectorIndex(0);
 }
 
 
 void sdpPlayerPlot2D::SetSynced(bool isSynced) {
 
-  ExWidget.SyncCheck->setChecked(isSynced);
-  Sync = isSynced;
+    ExWidget.SyncCheck->setChecked(isSynced);
+    Sync = isSynced;
 
+}
+
+
+void sdpPlayerPlot2D::QSlotUpperYRangeSpinChanged(double upperRange) {
+    CMN_LOG_CLASS_RUN_VERBOSE << "Upper Y Range update:" << upperRange<<std::endl;
+    vct2 r = Plot->GetViewingRangeY();
+    Plot->FitY(r[0], upperRange, 0);
+}
+
+void sdpPlayerPlot2D::QSlotLowerYRangeSpinChanged(double lowerRange) {
+    CMN_LOG_CLASS_RUN_VERBOSE << "Lower Y Range update:" << lowerRange << std::endl;
+    vct2 r = Plot->GetViewingRangeY();
+    Plot->FitY(lowerRange, r[1], 0);
 }

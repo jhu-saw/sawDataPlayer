@@ -47,9 +47,9 @@ int main(int argc, char *argv[])
 
     QApplication application(argc, argv);
     svlInitialize();
-    sdpPlayerManager * playerManager = new sdpPlayerManager("PlayerManager", 1.0 * cmn_ms);
+    sdpPlayerManager * playerManager = new sdpPlayerManager("PlayerManager", 50.0 * cmn_ms);
    // sdpPlayerExample * player = new sdpPlayerExample("Player", 1.0 * cmn_ms);
-    sdpPlayerVideo * videoPlayer = new sdpPlayerVideo("VideoPlayer", 1.0 * cmn_ms);
+    sdpPlayerVideo * videoPlayer = new sdpPlayerVideo("VideoPlayer", 15.0 * cmn_ms);
     sdpPlayerPlot2D * plotPlayer = new sdpPlayerPlot2D("PlotPlayer", 40.0 * cmn_ms);
 
 
