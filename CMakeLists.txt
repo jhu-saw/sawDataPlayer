@@ -26,18 +26,16 @@ if (cisst_FOUND_AS_REQUIRED)
   # sawOpenAL has been compiled within cisst, we should find it automatically
   find_package (sawOpenAL QUIET HINTS "${cisst_saw_BINARY_DIR}/saw/components")
 
- if (sawOpenAL_FOUND)
-   set (audioPlayer_Sources
-       sdpPlayerAudio.h
-       sdpPlayerAudio.cpp)
+  if (sawOpenAL_FOUND)
+    set (audioPlayer_Sources
+         sdpPlayerAudio.h
+         sdpPlayerAudio.cpp)
 
-   set (audioPlayer_Header
-       sdpPlayerAudio.h)
+    set (audioPlayer_Header
+         sdpPlayerAudio.h)
 
-
-       add_definitions(-DsawPlayer_has_sawOpenAL)
+   add_definitions(-DsawPlayer_has_sawOpenAL)
   endif (sawOpenAL_FOUND)
-
 
   qt4_wrap_cpp (QT_WRAPPED_CPP
                 sdpPlayerBase.h
@@ -51,11 +49,6 @@ if (cisst_FOUND_AS_REQUIRED)
   qt4_wrap_ui (QT_WRAPPED_UI
                sdpPlayerManagerWidget.ui
                sdpPlayerWidget.ui)
-
-
-
-
-
 
   add_library (sawDataPlayerComponents ${IS_SHARED}
                ${QT_WRAPPED_CPP}
@@ -79,7 +72,7 @@ if (cisst_FOUND_AS_REQUIRED)
                sdpPlayerParseStateTableData.cpp
                ${audioPlayer_Sources}
                )
-
+  set_property (TARGET sawDataPlayerComponents PROPERTY FOLDER "sawDataPlayer")
   cisst_target_link_libraries (sawDataPlayerComponents ${REQUIRED_CISST_LIBRARIES})
 
   if (sawOpenAL_FOUND)
@@ -95,11 +88,12 @@ if (cisst_FOUND_AS_REQUIRED)
                   main.cpp)
 
   target_link_libraries (sawDataPlayer sawDataPlayerComponents)
+  set_property (TARGET sawDataPlayer PROPERTY FOLDER "sawDataPlayer")
   cisst_target_link_libraries (sawDataPlayer ${REQUIRED_CISST_LIBRARIES})
 
   add_executable (sawQtVideoPlayer
                   qtVideoPlayer.cpp)
-
+  set_property (TARGET sawQtVideoPlayer PROPERTY FOLDER "sawDataPlayer")
   target_link_libraries (sawQtVideoPlayer sawDataPlayerComponents)
   cisst_target_link_libraries (sawQtVideoPlayer ${REQUIRED_CISST_LIBRARIES})
 
