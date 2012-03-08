@@ -62,6 +62,10 @@ public:
     //If not synced then the player needs to go through Manager in order to play.
     void SetSynced(bool isSynced);
 
+protected:
+    bool eventFilter( QObject *dist, QEvent *event );
+
+
 private:
 
     Ui::sdpPlayerWidget ExWidget;
@@ -79,6 +83,9 @@ private:
     void UpdateLimits(void);
 
     void SetupPipeline();
+
+    void SeekForwardOne();
+    void SeekReverseOne();
 
     QWidget MainWindow;
     svlFilterImageOpenGLQtWidget * VideoWidget;

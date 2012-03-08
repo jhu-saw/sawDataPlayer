@@ -61,7 +61,7 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
 
     LeftSpinBox     = new QSpinBox(&Widget);
     RightSpinBox    = new QSpinBox(&Widget);
-    TopSpinBox       = new QSpinBox(&Widget);
+    TopSpinBox      = new QSpinBox(&Widget);
     BottomSpinBox   = new QSpinBox(&Widget);
 
     QGridLayout *cropLayout = new QGridLayout(&Widget);
@@ -73,6 +73,8 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     cropLayout->addWidget(BottomSpinBox,2,0,1,2,Qt::AlignJustify);
     cropLayout->addWidget(CropButton,3,0,1,2,Qt::AlignJustify);
 
+    QApplication::instance()->installEventFilter(this);
+    //Widget.installEventFilter(this);
 
 }
 
@@ -431,6 +433,8 @@ void sdpPlayerVideo::LoadData(void)
         Time = PlayerDataInfo.DataEnd();
     }
 
+    Source.SetLoop(true);
+
     //This is the standard.
     PlayUntilTime = PlayerDataInfo.DataEnd();
 
@@ -462,8 +466,6 @@ void sdpPlayerVideo::QSlotOpenFileClicked(void){
         CMN_LOG_CLASS_RUN_WARNING<<"File not selected, no data to load"<<std::endl;
         return;
     }
-
-
 
     BaseAccess.LoadData();
 
@@ -573,4 +575,66 @@ void sdpPlayerVideo::QSlotCropButtonClicked(bool checked) {
         SetupPipeline();
         CropButton->setText("CropDisabled");
     }
+}
+
+bool sdpPlayerVideo::eventFilter( QObject *dist, QEvent *event )
+  {
+    if( event->type() == QEvent::KeyPress )
+    {
+      QKeyEvent *keyEvent = static_cast<QKeyEvent*>( event );
+
+      if(keyEvent->key() == Qt::Key_Right){
+          SeekForwardOne();
+          std::cout<<"Key_Right"<<std::endl;
+          event->accept();
+          return true;
+       }
+      else if(keyEvent->key() == Qt::Key_Left){
+          SeekReverseOne();
+          event->accept();
+          std::cout<<"Key_Left"<<std::endl;
+          return true;
+      }
+    }
+
+    return false;
+}
+
+void sdpPlayerVideo::SeekForwardOne() {
+
+    int range = Source.GetLength();
+    int p = Source.GetPosition()+1;
+
+    if (p >= range) {
+        p = range-1;
+    }
+    double t = Source.GetTimeAtPosition(p);
+
+    if (Sync) {
+        SeekRequest(t);
+    } else {
+        State = SEEK;
+        Time = t;
+    }
+    PlayUntilTime = PlayerDataInfo.DataEnd();
+
+}
+
+void sdpPlayerVideo::SeekReverseOne(){
+
+    int p = Source.GetPosition()-1;
+
+    if (p < 0) {
+        p = 0;
+    }
+    double t = Source.GetTimeAtPosition(p);
+
+    if (Sync) {
+        SeekRequest(t);
+    } else {
+        State = SEEK;
+        Time = t;
+    }
+    PlayUntilTime = PlayerDataInfo.DataEnd();
+
 }
