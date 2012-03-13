@@ -159,8 +159,10 @@ void sdpPlayerVideo::Run(void)
             //source.Play();
             //CMN_LOG_CLASS_RUN_WARNING<<"pos: "<<Source.GetPositionAtTime(Time.Data)<<std::endl;
             //CMN_LOG_CLASS_RUN_WARNING<<"at T: "<<source.GetTimeAtPosition(source.GetPositionAtTime(Time.Data))<<std::endl;
-            Source.SetPosition(Source.GetPositionAtTime(Time.Data));
-            Source.Play();
+            if ( Source.IsInitialized()) {
+                Source.SetPosition(Source.GetPositionAtTime(Time.Data));
+                Source.Play();
+            }
         }
     }
     //make sure we are at the correct seek position.
@@ -168,13 +170,16 @@ void sdpPlayerVideo::Run(void)
         //Load and Prep current data
         // CMN_LOG_CLASS_RUN_WARNING<<"pos: "<<source.GetPositionAtTime(Time.Data)<<std::endl;
         //CMN_LOG_CLASS_RUN_WARNING<<"at T: "<<Source.GetTimeAtPosition(Source.GetPositionAtTime(Time.Data))<<std::endl;
-        Source.SetPosition(Source.GetPositionAtTime(Time.Data));
-        Source.Play();
-    }
+        if ( Source.IsInitialized()) {
+            Source.SetPosition(Source.GetPositionAtTime(Time.Data));
+            Source.Play();
 
+        }
+    }
     else if (State == STOP) {
         //do Nothing
-        Source.Pause();
+        if ( Source.IsInitialized())
+            Source.Pause();
         // CMN_LOG_CLASS_RUN_WARNING<<"pos: "<<source.GetPositionAtTime(Time.Data)<<std::endl;
         // CMN_LOG_CLASS_RUN_WARNING<<"at T: "<<source.GetTimeAtPosition(source.GetPositionAtTime(Time.Data))<<std::endl;
     }
@@ -242,7 +247,7 @@ void sdpPlayerVideo::Seek(const mtsDouble & time)
 
 void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
 {
-     //std::cout<< "Save " << saveParameters << std::endl;
+    //std::cout<< "Save " << saveParameters << std::endl;
     if (Sync) {
         CMN_LOG_CLASS_RUN_VERBOSE << "Save " << saveParameters << std::endl;
 
@@ -326,7 +331,7 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
             std::cerr << " > Frames processed: " << source->GetFrameCounter() << "     \r";
         } while (SaveStream->IsRunning() && SaveStream->WaitForStop(0.5) == SVL_WAIT_TIMEOUT);
 
-       CMN_LOG_CLASS_RUN_VERBOSE << " > Frames processed: " << source->GetFrameCounter() << "           " << std::endl;
+        CMN_LOG_CLASS_RUN_VERBOSE << " > Frames processed: " << source->GetFrameCounter() << "           " << std::endl;
 
         if (SaveStream->GetStreamStatus() < 0) {
             // Some error
@@ -336,7 +341,7 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
             // Success
             CMN_LOG_CLASS_RUN_VERBOSE << " > Conversion done." << std::endl;
         }
-       // CMN_LOG_CLASS_RUN_VERBOSE << "Converted: '" << FileName << "' to '" <<  videofilename.str()  << std::endl;
+        // CMN_LOG_CLASS_RUN_VERBOSE << "Converted: '" << FileName << "' to '" <<  videofilename.str()  << std::endl;
 
         SaveStream->Stop();
         // release pipeline
@@ -519,12 +524,14 @@ void sdpPlayerVideo::SetupPipeline(void)
         unsigned int w;
         unsigned int h;
         if (codec)
-        codec->Open(FileName,w,h,f);
+            codec->Open(FileName,w,h,f);
         codec->Close();
         Cropper.SetRectangle(0,0,w,h);
         svlVideoIO::ReleaseCodec(codec);
 
     }
+
+    //StreamManager.Initialize();
 
     StreamManager.Play();
     Source.Pause();
@@ -546,10 +553,10 @@ void sdpPlayerVideo::SetSynced(bool isSynced) {
 
 void sdpPlayerVideo::QSlotSetRangeClicked(void) {
 
-      SaveParameters.Start() = ExWidget.SaveStartSpin->value();
-      SaveParameters.End() = ExWidget.SaveEndSpin->value();
+    SaveParameters.Start() = ExWidget.SaveStartSpin->value();
+    SaveParameters.End() = ExWidget.SaveEndSpin->value();
 
-      UpdateSaveParams(SaveParameters);
+    UpdateSaveParams(SaveParameters);
 }
 
 void sdpPlayerVideo::QSlotCropButtonClicked(bool checked) {
@@ -578,23 +585,23 @@ void sdpPlayerVideo::QSlotCropButtonClicked(bool checked) {
 }
 
 bool sdpPlayerVideo::eventFilter( QObject *dist, QEvent *event )
-  {
+{
     if( event->type() == QEvent::KeyPress )
     {
-      QKeyEvent *keyEvent = static_cast<QKeyEvent*>( event );
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>( event );
 
-      if(keyEvent->key() == Qt::Key_Right){
-          SeekForwardOne();
-          std::cout<<"Key_Right"<<std::endl;
-          event->accept();
-          return true;
-       }
-      else if(keyEvent->key() == Qt::Key_Left){
-          SeekReverseOne();
-          event->accept();
-          std::cout<<"Key_Left"<<std::endl;
-          return true;
-      }
+        if(keyEvent->key() == Qt::Key_Right){
+            SeekForwardOne();
+            std::cout<<"Key_Right"<<std::endl;
+            event->accept();
+            return true;
+        }
+        else if(keyEvent->key() == Qt::Key_Left){
+            SeekReverseOne();
+            event->accept();
+            std::cout<<"Key_Left"<<std::endl;
+            return true;
+        }
     }
 
     return false;

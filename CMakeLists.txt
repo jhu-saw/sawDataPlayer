@@ -43,6 +43,7 @@ if (cisst_FOUND_AS_REQUIRED)
                 sdpPlayerManager.h
                 sdpPlayerVideo.h
                 sdpPlayerPlot2D.h
+	        sdpPlayerNotes.h
                 ${audioPlayer_Header}
                 )
 
@@ -70,6 +71,8 @@ if (cisst_FOUND_AS_REQUIRED)
                sdpPlayerVideo.cpp
                sdpPlayerParseStateTableData.h
                sdpPlayerParseStateTableData.cpp
+               sdpPlayerNotes.h
+               sdpPlayerNotes.cpp
                ${audioPlayer_Sources}
                )
   set_property (TARGET sawDataPlayerComponents PROPERTY FOLDER "sawDataPlayer")

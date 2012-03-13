@@ -27,6 +27,7 @@ http://www.cisst.org/cisst/license.txt.
 #include "sdpPlayerManager.h"
 #include "sdpPlayerVideo.h"
 #include "sdpPlayerPlot2D.h"
+#include "sdpPlayerNotes.h"
 
 #ifdef sawPlayer_has_sawOpenAL
 #include "sdpPlayerAudio.h"
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
    // sdpPlayerExample * player = new sdpPlayerExample("Player", 1.0 * cmn_ms);
     sdpPlayerVideo * videoPlayer = new sdpPlayerVideo("VideoPlayer", 15.0 * cmn_ms);
     sdpPlayerPlot2D * plotPlayer = new sdpPlayerPlot2D("PlotPlayer", 40.0 * cmn_ms);
+    sdpPlayerNotes *notePlayer  = new sdpPlayerNotes("NotePlayer", 40*cmn_ms);
 
 
 #ifdef sawPlayer_has_sawOpenAL
@@ -59,6 +61,8 @@ int main(int argc, char *argv[])
 #endif
 
     componentManager->AddComponent(playerManager);
+    componentManager->AddComponent(notePlayer);
+
   //  componentManager->AddComponent(player);
     componentManager->AddComponent(videoPlayer);
     componentManager->AddComponent(plotPlayer);
@@ -67,7 +71,8 @@ int main(int argc, char *argv[])
  //   componentManager->Connect(player->GetName(), "GetStatus", player->GetName(), "ProvidesStatus");
     componentManager->Connect(videoPlayer->GetName(), "GetStatus", videoPlayer->GetName(), "ProvidesStatus");
     componentManager->Connect(plotPlayer->GetName(), "GetStatus",plotPlayer->GetName(), "ProvidesStatus");
-    
+    componentManager->Connect(notePlayer->GetName(), "GetStatus",notePlayer->GetName(), "ProvidesStatus");
+
     //Connect componets-added interfaces for Qt Thread
     componentManager->Connect(plotPlayer->GetName(), "Get2DPlotStatus",plotPlayer->GetName(), "Provides2DPlot");
 
@@ -86,6 +91,8 @@ int main(int argc, char *argv[])
  //   playerManager->AddPlayer(player);
     playerManager->AddPlayer(videoPlayer);
     playerManager->AddPlayer(plotPlayer);
+    playerManager->AddPlayer(notePlayer);
+
 
 #ifdef sawPlayer_has_sawOpenAL
     playerManager->AddPlayer(audioPlayer);
@@ -96,6 +103,7 @@ int main(int argc, char *argv[])
  //   player->Configure();
     videoPlayer->Configure();
     plotPlayer->Configure();
+    notePlayer->Configure();
 
 #ifdef sawPlayer_has_sawOpenAL
     audioPlayer->Configure();
