@@ -24,7 +24,7 @@ if (cisst_FOUND_AS_REQUIRED)
   include_directories (${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
   # sawOpenAL has been compiled within cisst, we should find it automatically
-  find_package (sawOpenAL QUIET HINTS "${cisst_saw_BINARY_DIR}/saw/components")
+  cisst_find_saw_component (sawOpenAL QUIET)
 
   if (sawOpenAL_FOUND)
     set (audioPlayer_Sources
