@@ -25,6 +25,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <QObject>
 #include <QtGui/QCloseEvent>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QSpinBox>
 #include "ui_sdpPlayerWidget.h"
 
@@ -99,13 +100,17 @@ private:
     svlOverlayTimestamp         * TimestampOverlay;
 
     std::string                 FileName;
-    QPushButton                 *CropButton;
+    QCheckBox                   *CropButton;
+    QCheckBox                   *SwapRGB_Button;
     QSpinBox                    *LeftSpinBox;
     QSpinBox                    *RightSpinBox;
     QSpinBox                    *TopSpinBox;
     QSpinBox                    *BottomSpinBox;
 
     svlRect                     CropRect;
+    int                         VideoWidth;
+    int                         VideoHeight;
+
 
 private slots:
 

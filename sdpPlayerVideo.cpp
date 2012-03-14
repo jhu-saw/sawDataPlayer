@@ -49,15 +49,21 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     CentralLayout->setContentsMargins(0, 0, 0, 0);
     CentralLayout->setRowStretch(0, 1);
     CentralLayout->setColumnStretch(1, 1);
+    CentralLayout->setObjectName("CentralLayout");
 
     CentralLayout->addWidget(VideoWidget, 0, 0, 1, 4);
     CentralLayout->addWidget(&Widget,1,1,1,1);
     Cropper.Enable();
 
-    CropButton = new QPushButton(&Widget);
+    CropButton = new QCheckBox(&Widget);
     CropButton->setCheckable(true);
     CropButton->setChecked(false);
-    CropButton->setText("CropDisabled");
+    CropButton->setText("Crop");
+
+    SwapRGB_Button = new QCheckBox(&Widget);
+    SwapRGB_Button->setCheckable(true);
+    SwapRGB_Button->setChecked(false);
+    SwapRGB_Button->setText("SwapRGB");
 
     LeftSpinBox     = new QSpinBox(&Widget);
     RightSpinBox    = new QSpinBox(&Widget);
@@ -65,14 +71,15 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     BottomSpinBox   = new QSpinBox(&Widget);
 
     QGridLayout *cropLayout = new QGridLayout(&Widget);
+    cropLayout->setObjectName("croplayout");
 
     CentralLayout->addLayout(cropLayout,1,3,1,1);
     cropLayout->addWidget(TopSpinBox,0,0,1,2,Qt::AlignJustify);
     cropLayout->addWidget(LeftSpinBox,1,0,1,1,Qt::AlignLeft);
     cropLayout->addWidget(RightSpinBox,1,1,1,1,Qt::AlignRight);
     cropLayout->addWidget(BottomSpinBox,2,0,1,2,Qt::AlignJustify);
-    cropLayout->addWidget(CropButton,3,0,1,2,Qt::AlignJustify);
-
+    cropLayout->addWidget(CropButton,3,1,1,1,Qt::AlignJustify);
+    cropLayout->addWidget(SwapRGB_Button,3,0,1,1,Qt::AlignJustify);
     QApplication::instance()->installEventFilter(this);
     //Widget.installEventFilter(this);
 
@@ -112,7 +119,8 @@ void sdpPlayerVideo::MakeQTConnections(void)
 
     QObject::connect(this->CropButton, SIGNAL(clicked(bool)),
                      this, SLOT( QSlotCropButtonClicked(bool)) );
-
+    QObject::connect(this->SwapRGB_Button, SIGNAL(clicked()),
+                     VideoWidget, SLOT( QSlotSwapRGB()) );
 }
 
 
@@ -474,6 +482,9 @@ void sdpPlayerVideo::QSlotOpenFileClicked(void){
 
     BaseAccess.LoadData();
 
+    BottomSpinBox->setValue(VideoHeight);
+    RightSpinBox->setValue(VideoWidth);
+
 }
 
 void sdpPlayerVideo::UpdateLimits()
@@ -486,6 +497,7 @@ void sdpPlayerVideo::UpdateLimits()
     ExWidget.SaveStartSpin->setRange( PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
     ExWidget.SaveEndSpin->setRange( PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
     ExWidget.SaveEndSpin->setValue(PlayerDataInfo.DataEnd());
+
 }
 
 
@@ -514,21 +526,25 @@ void sdpPlayerVideo::SetupPipeline(void)
 
     }
 
+    unsigned int w;
+    unsigned int h;
+    svlVideoCodecBase * codec = svlVideoIO::GetCodec(FileName);
+    double f;
+
+    if (codec)
+        codec->Open(FileName,w,h,f);
+    codec->Close();
+
+    VideoWidth  = w;
+    VideoHeight = h;
+    svlVideoIO::ReleaseCodec(codec);
+
     if (CropButton->isChecked()) {
         Cropper.SetRectangle(CropRect);
         //Cropper.SetRectangle(0,0,555,555);
     }
     else {
-        svlVideoCodecBase * codec = svlVideoIO::GetCodec(FileName);
-        double f;
-        unsigned int w;
-        unsigned int h;
-        if (codec)
-            codec->Open(FileName,w,h,f);
-        codec->Close();
         Cropper.SetRectangle(0,0,w,h);
-        svlVideoIO::ReleaseCodec(codec);
-
     }
 
     //StreamManager.Initialize();
@@ -575,12 +591,12 @@ void sdpPlayerVideo::QSlotCropButtonClicked(bool checked) {
 
         SetupPipeline();
 
-        CropButton->setText("CropEnabled");
+        //CropButton->setText("CropEnabled");
     }
     else {
 
         SetupPipeline();
-        CropButton->setText("CropDisabled");
+       // CropButton->setText("CropDisabled");
     }
 }
 

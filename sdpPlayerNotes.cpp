@@ -163,9 +163,11 @@ void sdpPlayerNotes::QSlotOpenFileClicked(void) {
     else {
         CMN_LOG_CLASS_RUN_ERROR<< "Unable to open file" << fileName.toStdString()<<std::endl;
         ErrorMessage("Unable to open file" + fileName.toStdString());
+        BaseAccess.LoadData();
+
     }
 
-    BaseAccess.LoadData();
+
 }
 
 
