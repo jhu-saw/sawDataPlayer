@@ -141,11 +141,13 @@ void sdpPlayerNotes::QSlotOpenFileClicked(void) {
         TableWidget.setColumnCount(2);
         TableWidget.setAlternatingRowColors(true);
         TableWidget.setAutoScroll(true);
+        TableWidget.setStyleSheet("QTableView {selection-background-color: green; selection-color: white;}");
+
         TableWidget.setEditTriggers(QAbstractItemView::NoEditTriggers);
-
-//        TableWidget.setSelectionBehavior(QAbstractItemView::NoSelection);
+        //TableWidget.setEditTriggers(QAbstractItemView::SelectedClicked);
+        TableWidget.setSelectionBehavior(QAbstractItemView::SelectRows);
+       // TableWidget.setSelectionMode(QAbstractItemView::SingleSelection);
 //      But, with "ItemIsSelectable", "ItemIsEditable" and "ItemIsUserCheckable" flags the double click signal is not sent  with both cell and item signals.
-
 
 
         for (int row = 0; row < TimestampsVec.size(); row ++) {
@@ -158,13 +160,11 @@ void sdpPlayerNotes::QSlotOpenFileClicked(void) {
         TableWidget.horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
 
         CMN_LOG_CLASS_RUN_VERBOSE<< "Loaded "<< TimestampsVec.size()<<" notes "<< fileName.toStdString()<<std::endl;
-
+        BaseAccess.LoadData();
     }
     else {
         CMN_LOG_CLASS_RUN_ERROR<< "Unable to open file" << fileName.toStdString()<<std::endl;
         ErrorMessage("Unable to open file" + fileName.toStdString());
-        BaseAccess.LoadData();
-
     }
 
 
