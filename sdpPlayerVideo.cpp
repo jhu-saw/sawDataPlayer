@@ -27,6 +27,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <sstream>
 #include <QFileDialog>
 #include <cisstStereoVision/svlFilterVideoFileWriter.h>
+#include <cisstStereoVision/svlFilterImageFileWriter.h>
+#include <cisstStereoVision/svlFilterImageChannelSwapper.h>
 
 #include <cisstOSAbstraction/osaGetTime.h>
 #include <cisstStereoVision/svlFilterOutput.h>
@@ -65,6 +67,11 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     SwapRGB_Button->setChecked(false);
     SwapRGB_Button->setText("SwapRGB");
 
+    SaveAsBMPButton = new QCheckBox(&Widget);
+    SaveAsBMPButton->setCheckable(true);
+    SaveAsBMPButton->setChecked(false);
+    SaveAsBMPButton->setText("SaveBMPs");
+
     LeftSpinBox     = new QSpinBox(&Widget);
     RightSpinBox    = new QSpinBox(&Widget);
     TopSpinBox      = new QSpinBox(&Widget);
@@ -80,6 +87,8 @@ sdpPlayerVideo::sdpPlayerVideo(const std::string & name, double period):
     cropLayout->addWidget(BottomSpinBox,2,0,1,2,Qt::AlignJustify);
     cropLayout->addWidget(CropButton,3,1,1,1,Qt::AlignJustify);
     cropLayout->addWidget(SwapRGB_Button,3,0,1,1,Qt::AlignJustify);
+    cropLayout->addWidget(SaveAsBMPButton,4,0,1,1,Qt::AlignJustify);
+
     QApplication::instance()->installEventFilter(this);
     //Widget.installEventFilter(this);
 
@@ -259,48 +268,53 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
     if (Sync) {
         CMN_LOG_CLASS_RUN_VERBOSE << "Save " << saveParameters << std::endl;
 
+        svlFilterSourceVideoFile    *source = new svlFilterSourceVideoFile(1);
+        svlFilterVideoFileWriter    *writer = new svlFilterVideoFileWriter;
+        svlFilterImageCropper       *cropper = new svlFilterImageCropper;
+        svlFilterImageChannelSwapper *rgb_swapper = new svlFilterImageChannelSwapper;
+        svlFilterImageFileWriter    *imageWriter= new svlFilterImageFileWriter;
+        svlStreamManager            *SaveStream = new svlStreamManager(8);
 
-        svlFilterSourceVideoFile    *source;
-        svlFilterVideoFileWriter    *writer;
-        svlFilterImageCropper       *cropper;
+        bool saveImages = SaveAsBMPButton->isChecked();
 
-        svlStreamManager            *SaveStream;
-
-        SaveStream = new svlStreamManager(8);
-        source     = new svlFilterSourceVideoFile(1);
-        writer     = new svlFilterVideoFileWriter;
-        cropper    = new svlFilterImageCropper;
+        std::stringstream videofilename;
 
         if (source->SetFilePath(FileName) != SVL_OK) {
             CMN_LOG_CLASS_RUN_ERROR << std::endl << "Wrong file name... " << std::endl;
             return;
         }
 
-        svlVideoCodecBase* codec = svlVideoIO::GetCodec(".cvi");
-        if (!codec) {
-            CMN_LOG_CLASS_RUN_VERBOSE << "`StartRecording` error: failed to initialize `CVI` video codec" << std::endl;
-            return;
+        if ( saveImages ) {
+            imageWriter->SetFilePath(saveParameters.Path().Data + saveParameters.Prefix().Data, "bmp");
+            imageWriter->EnableTimestamps();
+            imageWriter->Record();
+            CMN_LOG_CLASS_RUN_VERBOSE << "`Start Recording`: setting up image writer with prefix: `" << videofilename.str() << "`" << std::endl;
         }
-        svlVideoIO::Compression* compression = codec->GetCompression();
-        if (!compression) {
-            CMN_LOG_CLASS_RUN_VERBOSE << "`StartRecording` error: failed to get `CVI` video compression parameters" << std::endl;
-            return;
+        else {
+            svlVideoCodecBase* codec = svlVideoIO::GetCodec(".cvi");
+            if (!codec) {
+                CMN_LOG_CLASS_RUN_VERBOSE << "`StartRecording` error: failed to initialize `CVI` video codec" << std::endl;
+                return;
+            }
+            svlVideoIO::Compression* compression = codec->GetCompression();
+            if (!compression) {
+                CMN_LOG_CLASS_RUN_VERBOSE << "`StartRecording` error: failed to get `CVI` video compression parameters" << std::endl;
+                return;
+            }
+            compression->data[0] = 4; // compression level
+
+            videofilename << std::setprecision(3) << std::fixed << saveParameters.Path().Data <<saveParameters.Prefix().Data <<"_"<< saveParameters.Start() << ".cvi";
+
+            CMN_LOG_CLASS_RUN_VERBOSE << "`Start Recording`: setting up video file `" << videofilename.str() << "`" << std::endl;
+
+            writer->SetFilePath(videofilename.str(), 0);
+            writer->SetCodecParams(compression, 0);
+            writer->OpenFile(0);
+
+            svlVideoIO::ReleaseCompression(compression);
+            svlVideoIO::ReleaseCodec(codec);
+            writer->Record();
         }
-        compression->data[0] = 4; // compression level
-
-        std::stringstream videofilename;
-
-        videofilename << std::setprecision(3) << std::fixed << saveParameters.Path().Data <<saveParameters.Prefix().Data <<"_"<< saveParameters.Start() << ".cvi";
-
-        CMN_LOG_CLASS_RUN_VERBOSE << "`Start Recording`: setting up video file `" << videofilename.str() << "`" << std::endl;
-
-        writer->SetFilePath(videofilename.str(), 0);
-        writer->SetCodecParams(compression, 0);
-        writer->OpenFile(0);
-
-        svlVideoIO::ReleaseCompression(compression);
-        svlVideoIO::ReleaseCodec(codec);
-        writer->Record();
 
         svlFilterOutput* output = 0;
 
@@ -313,9 +327,15 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
             output->Connect(cropper->GetInput());
             output = cropper->GetOutput();
         }
+        if (this->SwapRGB_Button->isChecked()) {
+            output->Connect(rgb_swapper->GetInput());
+            output = rgb_swapper->GetOutput();
+        }
 
-        output->Connect(writer->GetInput());
-
+        if ( saveImages )
+            output->Connect(imageWriter->GetInput());
+        else
+            output->Connect(writer->GetInput());
 
         // initialize stream
         if (SaveStream->Initialize() != SVL_OK) {
@@ -361,10 +381,15 @@ void sdpPlayerVideo::Save(const sdpSaveParameters & saveParameters)
         LCM->RemoveComponent(source);
         LCM->RemoveComponent(writer);
         LCM->RemoveComponent(cropper);
+        LCM->RemoveComponent(imageWriter);
+        LCM->RemoveComponent(rgb_swapper);
+
         delete SaveStream;
         delete writer;
+        delete imageWriter;
         delete source;
         delete cropper;
+        delete rgb_swapper;
 
     }
 }

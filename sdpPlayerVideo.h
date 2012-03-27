@@ -101,6 +101,7 @@ private:
 
     std::string                 FileName;
     QCheckBox                   *CropButton;
+    QCheckBox                   *SaveAsBMPButton;
     QCheckBox                   *SwapRGB_Button;
     QSpinBox                    *LeftSpinBox;
     QSpinBox                    *RightSpinBox;
