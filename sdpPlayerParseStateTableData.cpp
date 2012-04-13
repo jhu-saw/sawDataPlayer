@@ -157,9 +157,9 @@ void sdpPlayerParseStateTableData::TestIndex(void) {
 }
 
 // return next boundary of time
-void sdpPlayerParseStateTableData::GetBoundary(vctPlot2DBase::Trace *  TraceHandle, double &TopBoundary, double &LowBoundary) {
+void sdpPlayerParseStateTableData::GetBoundary(vctPlot2DBase::Signal *  SignalHandle, double &TopBoundary, double &LowBoundary) {
 
-    TraceHandle->ComputeDataRangeX(LowBoundary,TopBoundary, true);
+    SignalHandle->ComputeDataRangeX(LowBoundary,TopBoundary, true);
     LowBoundary += this->TimeBaseOffset;
     TopBoundary += this->TimeBaseOffset;
     return;
@@ -237,29 +237,29 @@ size_t sdpPlayerParseStateTableData::GetDataPoisitionFromFile(double Data, int F
     return CurrentPos;
 }
 
-void sdpPlayerParseStateTableData::TriggerLoadDataFromFile(vctPlot2DBase::Trace *  TraceHandle ,double TimeStampForSearch, double VisualRange,  bool ResetTraceBuffer) {
+void sdpPlayerParseStateTableData::TriggerLoadDataFromFile(vctPlot2DBase::Signal *  SignalHandle ,double TimeStampForSearch, double VisualRange,  bool ResetSignalBuffer) {
     CS.Enter();
-    this->TracePointer = TraceHandle;
+    this->SignalPointer = SignalHandle;
     this->MiddleTime = TimeStampForSearch;
     this->TimeRange = VisualRange;
-    this->ResetBuffer = ResetTraceBuffer;
+    this->ResetBuffer = ResetSignalBuffer;
     this->StartRun = true;
     CS.Leave();
 }
 
 
-void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Trace *  TraceHandle ,double TimeStampForSearch, double VisualRange,  bool ResetTraceBuffer) {
+void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Signal *  SignalHandle ,double TimeStampForSearch, double VisualRange,  bool ResetSignalBuffer) {
     double MinimumTime, MaxmumTime; 
     std::string TempLine;
     std::vector <std::string> Token;  
     std::vector <double> TimeIndex;
     size_t LeftBoundaryPosition = 0, RightBoundaryPosition = 0;
     double LeftBoundaryTime = 0.0, RightBoundaryTime = 0.0;
-    size_t ElementsNumber =0, TraceBufferSize = 0;
-    if (ResetTraceBuffer) {         
-        ElementsNumber = TraceHandle->GetNumberOfPoints();
-        TraceBufferSize = TraceHandle->GetSize();
-        TraceHandle->SetSize(TraceBufferSize);
+    size_t ElementsNumber =0, SignalBufferSize = 0;
+    if (ResetSignalBuffer) {         
+        ElementsNumber = SignalHandle->GetNumberOfPoints();
+        SignalBufferSize = SignalHandle->GetSize();
+        SignalHandle->SetSize(SignalBufferSize);
     }
     // Get Max & Minimum Time
     std::ifstream inf(Header.FilePath.c_str());
@@ -287,8 +287,8 @@ void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Trace *  Trac
     // find where is the LeftBoundaryPosition & RightBoundaryPosition
     // where is TimeStampForSearch postition in index file?     
     double  min, max;
-    TraceHandle->ComputeDataRangeX(min,max,true);   
-    if (min<= LeftBoundaryTime && (LeftBoundaryTime >=  MinimumTime && !ResetTraceBuffer)) {       
+    SignalHandle->ComputeDataRangeX(min,max,true);   
+    if (min<= LeftBoundaryTime && (LeftBoundaryTime >=  MinimumTime && !ResetSignalBuffer)) {       
         LeftBoundaryPosition = GetDataPoisitionFromFile(max+TimeBaseOffset,  IndexOfTimeField);             
         RightBoundaryPosition = GetDataPoisitionFromFile(RightBoundaryTime+TimeBaseOffset, IndexOfTimeField);       
         if (LeftBoundaryPosition >= RightBoundaryPosition)
@@ -311,33 +311,33 @@ void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Trace *  Trac
                 break;
             DataElement = strtod(Token.at(IndexOfDataField).c_str() , NULL);
             TimeElement = strtod(Token.at(IndexOfTimeField).c_str() , NULL);
-//            TraceHandle->GetNumberOfPoints(ElementsNumber, TraceBufferSize);       
-            ElementsNumber = TraceHandle->GetNumberOfPoints();
-            TraceBufferSize = TraceHandle->GetSize();
-            if (ElementsNumber == TraceBufferSize && (LeftBoundaryTime <= min)) {     
+//            SignalHandle->GetNumberOfPoints(ElementsNumber, SignalBufferSize);       
+            ElementsNumber = SignalHandle->GetNumberOfPoints();
+            SignalBufferSize = SignalHandle->GetSize();
+            if (ElementsNumber == SignalBufferSize && (LeftBoundaryTime <= min)) {     
                 // Buffer overflow, we need to add size
-                TraceBufferSize *= 1.5;
-                TraceHandle->Resize(TraceBufferSize);
+                SignalBufferSize *= 1.5;
+                SignalHandle->Resize(SignalBufferSize);
             }
             TimeElement -= TimeBaseOffset;
-            TraceHandle->AppendPoint(vctDouble2(TimeElement,DataElement));
-            TraceHandle->ComputeDataRangeX(min,max,true);       
+            SignalHandle->AppendPoint(vctDouble2(TimeElement,DataElement));
+            SignalHandle->ComputeDataRangeX(min,max,true);       
         }       
         // should we resize to a smaller one?
-        //TraceHandle->GetNumberOfPoints(ElementsNumber, TraceBufferSize);  
-        ElementsNumber = TraceHandle->GetNumberOfPoints();
-        TraceBufferSize = TraceHandle->GetSize();
-        if (TraceBufferSize > ElementsNumber*1.5) {
-            TraceHandle->Resize(ElementsNumber*1.5);
+        //SignalHandle->GetNumberOfPoints(ElementsNumber, SignalBufferSize);  
+        ElementsNumber = SignalHandle->GetNumberOfPoints();
+        SignalBufferSize = SignalHandle->GetSize();
+        if (SignalBufferSize > ElementsNumber*1.5) {
+            SignalHandle->Resize(ElementsNumber*1.5);
         }
         delete StringBuffer;
     }
     else if (min > RightBoundaryTime || max < LeftBoundaryTime) {        
         // if every thing is not in our range, reset buffer and reload everything
-        //TraceHandle->GetNumberOfPoints(ElementsNumber, TraceBufferSize);
-        ElementsNumber = TraceHandle->GetNumberOfPoints();
-        TraceBufferSize = TraceHandle->GetSize();
-        TraceHandle->SetSize(TraceBufferSize);
+        //SignalHandle->GetNumberOfPoints(ElementsNumber, SignalBufferSize);
+        ElementsNumber = SignalHandle->GetNumberOfPoints();
+        SignalBufferSize = SignalHandle->GetSize();
+        SignalHandle->SetSize(SignalBufferSize);
         LeftBoundaryPosition = GetDataPoisitionFromFile(LeftBoundaryTime+TimeBaseOffset  ,IndexOfTimeField);
         RightBoundaryPosition = GetDataPoisitionFromFile(RightBoundaryTime+TimeBaseOffset, IndexOfTimeField);
 
@@ -362,33 +362,33 @@ void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Trace *  Trac
             DataElement = strtod(Token.at(IndexOfDataField).c_str() , NULL);
             TimeElement = strtod(Token.at(IndexOfTimeField).c_str() , NULL);
 
-            //TraceHandle->GetNumberOfPoints(ElementsNumber, TraceBufferSize);       
-            ElementsNumber = TraceHandle->GetNumberOfPoints();
-            TraceBufferSize = TraceHandle->GetSize();
-            if (ElementsNumber == TraceBufferSize && (LeftBoundaryTime <= min)) {
+            //SignalHandle->GetNumberOfPoints(ElementsNumber, SignalBufferSize);       
+            ElementsNumber = SignalHandle->GetNumberOfPoints();
+            SignalBufferSize = SignalHandle->GetSize();
+            if (ElementsNumber == SignalBufferSize && (LeftBoundaryTime <= min)) {
                 // Buffer overflow, we need to add size
-                TraceBufferSize *= 1.5;
-                TraceHandle->Resize(TraceBufferSize);
+                SignalBufferSize *= 1.5;
+                SignalHandle->Resize(SignalBufferSize);
             }
             TimeElement -= TimeBaseOffset;
-            TraceHandle->AppendPoint(vctDouble2(TimeElement,DataElement));            
-            TraceHandle->ComputeDataRangeX(min,max,true);       
+            SignalHandle->AppendPoint(vctDouble2(TimeElement,DataElement));            
+            SignalHandle->ComputeDataRangeX(min,max,true);       
         }        
         // should we resize to a smaller one?
-        //TraceHandle->GetNumberOfPoints(ElementsNumber, TraceBufferSize);  
-        ElementsNumber = TraceHandle->GetNumberOfPoints();
-        TraceBufferSize = TraceHandle->GetSize();
-        if (TraceBufferSize > ElementsNumber*1.5) {
-            TraceHandle->Resize(ElementsNumber*1.5);
+        //SignalHandle->GetNumberOfPoints(ElementsNumber, SignalBufferSize);  
+        ElementsNumber = SignalHandle->GetNumberOfPoints();
+        SignalBufferSize = SignalHandle->GetSize();
+        if (SignalBufferSize > ElementsNumber*1.5) {
+            SignalHandle->Resize(ElementsNumber*1.5);
         }
         delete StringBuffer;
     }
     else{
         // reload only what we need 
-        //TraceHandle->GetNumberOfPoints(ElementsNumber, TraceBufferSize);
-        ElementsNumber = TraceHandle->GetNumberOfPoints();
-        TraceBufferSize = TraceHandle->GetSize();
-        TraceHandle->Resize(TraceBufferSize);
+        //SignalHandle->GetNumberOfPoints(ElementsNumber, SignalBufferSize);
+        ElementsNumber = SignalHandle->GetNumberOfPoints();
+        SignalBufferSize = SignalHandle->GetSize();
+        SignalHandle->Resize(SignalBufferSize);
         LeftBoundaryPosition = GetDataPoisitionFromFile(LeftBoundaryTime+TimeBaseOffset  ,IndexOfTimeField);        
         //*********************************************************************************************
         // SECTION ONE, prepend data
@@ -419,14 +419,14 @@ void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Trace *  Trac
                 TimeDataBuffer.push_back(DataElement);
             }                            
             // reset buffer size for prepend data
-            //TraceHandle->GetNumberOfPoints(ElementsNumber, TraceBufferSize);          
-            ElementsNumber = TraceHandle->GetNumberOfPoints();
-            TraceBufferSize = TraceHandle->GetSize();
-            if ((TraceBufferSize - ElementsNumber) < TimeDataBuffer.size()) {               
-                TraceHandle->Resize(TraceBufferSize+ TimeDataBuffer.size());       
+            //SignalHandle->GetNumberOfPoints(ElementsNumber, SignalBufferSize);          
+            ElementsNumber = SignalHandle->GetNumberOfPoints();
+            SignalBufferSize = SignalHandle->GetSize();
+            if ((SignalBufferSize - ElementsNumber) < TimeDataBuffer.size()) {               
+                SignalHandle->Resize(SignalBufferSize+ TimeDataBuffer.size());       
             }            
             if (!TimeDataBuffer.empty())
-                TraceHandle->PrependArray((double*) &TimeDataBuffer[0], TimeDataBuffer.size());            
+                SignalHandle->PrependArray((double*) &TimeDataBuffer[0], TimeDataBuffer.size());            
             delete StringBuffer;
         }
         //*********************************************************************************************
@@ -505,7 +505,7 @@ void sdpPlayerParseStateTableData::Run(void) {
     StartRun = false;
     CS.Leave();
     // start to read file
-    this->LoadDataFromFile(TracePointer, MiddleTime, TimeRange, ResetBuffer);
+    this->LoadDataFromFile(SignalPointer, MiddleTime, TimeRange, ResetBuffer);
     return;
 }
 

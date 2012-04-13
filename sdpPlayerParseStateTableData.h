@@ -60,11 +60,11 @@ public:
     // Load a range of data, we may use a ping-pong buffer. Range should be time or data size. I am not sure yet
     // Compare TimeStampForSearch with TimeField which is set from user and load data & time to Data,Time respectively
     void GetBoundary(double TimeStampForSearch, double &TopBoundary, double &LowBoundary);
-    void GetBoundary(vctPlot2DBase::Trace *  TraceHandle, double &TopBoundary, double &LowBoundary);
+    void GetBoundary(vctPlot2DBase::Signal *  SignalHandle, double &TopBoundary, double &LowBoundary);
     //void LoadDataFromFile(double TimeStampForSearch, std::vector <double> &Data, std::vector <double> &Time );
-    //void LoadDataFromFile(vctPlot2DBase::Trace *  TraceHandle ,double TimeStampForSearch, bool ResetTraceBuffer);
-    void LoadDataFromFile(vctPlot2DBase::Trace *  TraceHandle ,double TimeStampForSearch, double VisualRange=0.0,  bool ResetTraceBuffer=false);
-    void TriggerLoadDataFromFile(vctPlot2DBase::Trace *  TraceHandle ,double TimeStampForSearch, double VisualRange=0.0,  bool ResetTraceBuffer=false);
+    //void LoadDataFromFile(vctPlot2DBase::Signal *  SignalHandle ,double TimeStampForSearch, bool ResetSignalBuffer);
+    void LoadDataFromFile(vctPlot2DBase::Signal *  SignalHandle ,double TimeStampForSearch, double VisualRange=0.0,  bool ResetSignalBuffer=false);
+    void TriggerLoadDataFromFile(vctPlot2DBase::Signal *  SignalHandle ,double TimeStampForSearch, double VisualRange=0.0,  bool ResetSignalBuffer=false);
     void SetDataFieldForSearch(std::string DataField);
     void SetTimeFieldForSearch(std::string TimeField);
     void GetBeginEndTime(double &Begin, double &End);
@@ -115,7 +115,7 @@ private:
     std::vector <struct IndexElement> Index;
 
     //Data to be sent from above application
-    vctPlot2DBase::Trace *  TracePointer;
+    vctPlot2DBase::Signal *  SignalPointer;
     double MiddleTime;
     double TimeRange;
     bool ResetBuffer;

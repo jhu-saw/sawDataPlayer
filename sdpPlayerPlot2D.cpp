@@ -51,7 +51,7 @@ sdpPlayerPlot2D::sdpPlayerPlot2D(const std::string & name, double period):
     // create the user interface
     Plot = new vctPlot2DOpenGLQtWidget(mainWidget);
     Plot->SetNumberOfPoints(100);
-    TracePointer = Plot->AddTrace("Data");
+    SignalPointer = Plot->AddSignal("Data");
     VerticalLinePointer = Plot->AddVerticalLine("X");
 
     QLabel *upperLabel = new QLabel(mainWidget);
@@ -193,9 +193,9 @@ void sdpPlayerPlot2D::Run(void)
         else {
             if (Parser.IsReady()) {
                 if((ZoomScaleValue)  > (TimeBoundary-Time )*(0.8) && TimeBoundary <  PlayUntilTime.Data){
-                    Parser.LoadDataFromFile(TracePointer, Time, ZoomScaleValue, false);
-                    //Parser.TriggerLoadDataFromFile(TracePointer, Time, ZoomScaleValue, false);
-                    Parser.GetBoundary(TracePointer, TopBoundary, LowBoundary);
+                    Parser.LoadDataFromFile(SignalPointer, Time, ZoomScaleValue, false);
+                    //Parser.TriggerLoadDataFromFile(SignalPointer, Time, ZoomScaleValue, false);
+                    Parser.GetBoundary(SignalPointer, TopBoundary, LowBoundary);
                     TimeBoundary  =TopBoundary;
                 }
                 // update plot
@@ -211,9 +211,9 @@ void sdpPlayerPlot2D::Run(void)
             if(LastTime.Data != Time.Data ){
                 LastTime = Time;
                 PlayStartTime = Time;
-                Parser.LoadDataFromFile(TracePointer, Time, ZoomScaleValue, true);
-                //Parser.TriggerLoadDataFromFile(TracePointer, Time, ZoomScaleValue, true);
-                Parser.GetBoundary(TracePointer, TopBoundary, LowBoundary);
+                Parser.LoadDataFromFile(SignalPointer, Time, ZoomScaleValue, true);
+                //Parser.TriggerLoadDataFromFile(SignalPointer, Time, ZoomScaleValue, true);
+                Parser.GetBoundary(SignalPointer, TopBoundary, LowBoundary);
                 TimeBoundary  = TopBoundary;
                 // update plot
                 UpdatePlot();
@@ -460,7 +460,7 @@ void sdpPlayerPlot2D::OpenFile(void)
         // read Data from file
         ExtractDataFromStateTableCSVFile(FileName);
 
-        Parser.GetBoundary(TracePointer,TopBoundary,LowBoundary);
+        Parser.GetBoundary(SignalPointer,TopBoundary,LowBoundary);
         TimeBoundary = TopBoundary;
         ResetPlayer();
         UpdatePlot();
@@ -497,10 +497,10 @@ bool sdpPlayerPlot2D::ExtractDataFromStateTableCSVFile(std::string & path){
     Parser.WriteIndexToFile("Parser.idx");
     Parser.SetDataFieldForSearch(DataFieldName);
     Parser.SetTimeFieldForSearch(TimeFieldName);
-    Parser.LoadDataFromFile(TracePointer, 0.0, ZoomScaleValue,  false);
-    //Parser.TriggerLoadDataFromFile(TracePointer, 0.0, ZoomScaleValue,  false);
+    Parser.LoadDataFromFile(SignalPointer, 0.0, ZoomScaleValue,  false);
+    //Parser.TriggerLoadDataFromFile(SignalPointer, 0.0, ZoomScaleValue,  false);
 
-    Parser.GetBoundary(TracePointer,TopBoundary,LowBoundary);
+    Parser.GetBoundary(SignalPointer,TopBoundary,LowBoundary);
 
     Parser.GetBeginEndTime(PlayerDataInfo.DataStart(), PlayerDataInfo.DataEnd());
     //    Data = &DataPool1;

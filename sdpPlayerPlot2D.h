@@ -59,7 +59,7 @@ private:
     QDoubleSpinBox * ScaleZoom;
     QLabel * ZoomInOut;
     vctPlot2DOpenGLQtWidget * Plot;
-    vctPlot2DBase::Trace * TracePointer;
+    vctPlot2DBase::Signal * SignalPointer;
     vctPlot2DBase::VerticalLine * VerticalLinePointer;
 
     std::vector <double> *TimeStamps;
