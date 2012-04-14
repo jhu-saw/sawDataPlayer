@@ -41,7 +41,7 @@ sdpPlayerAudio::sdpPlayerAudio(const std::string & name, double period):
 
     // create the widgets
     Plot        = new vctPlot2DOpenGLQtWidget(&Widget);
-    DataTrace   = Plot->AddTrace("Data");
+    DataTrace   = Plot->AddSignal("VolumeData");
 
     VolumeProgressBar = new QProgressBar(&Widget);
     VolumeProgressBar->setObjectName(QString::fromUtf8("VolumeProgressBar"));

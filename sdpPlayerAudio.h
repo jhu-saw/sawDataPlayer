@@ -82,7 +82,7 @@ private:
 
     QWidget                     MainWindow;
     vctPlot2DOpenGLQtWidget     * Plot;
-    vctPlot2DBase::Trace        * DataTrace;
+    vctPlot2DBase::Signal       * DataTrace;
 
     QHBoxLayout                 *HorizontalLayout;
     QVBoxLayout                 *SliderVLayout;
