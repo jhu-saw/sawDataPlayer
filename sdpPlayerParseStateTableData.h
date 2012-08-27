@@ -68,7 +68,7 @@ public:
     void SetDataFieldForSearch(std::string DataField);
     void SetTimeFieldForSearch(std::string TimeField);
     void GetBeginEndTime(double &Begin, double &End);
-    size_t GetDataPoisitionFromFile(double Data, int FieldNumber);
+    size_t GetDataPositionFromFile(double Data, int FieldNumber);
 
 
     //indicates if the pareses has opened a file and is ready to read data.

@@ -59,20 +59,6 @@ public:
     /*! destructor */
     ~sdpDataInfo() {};
 
-    /*! Allocate memory based on an existing object of the same type.
-      The object is provided via a cmnGenericObject pointer.  If a
-      dynamic cast to this type is not possible, this method returns
-      false. */
-    bool inline Allocate(const cmnGenericObject * model)
-    {
-        const ThisType * pointer = dynamic_cast<const ThisType *>(model);
-        if (pointer == 0) {
-            return false;
-        }      
-        return true;
-    }
-
-
     /*! Set and Get methods for the values */
     //@{
     MTS_DECLARE_MEMBER_AND_ACCESSORS(double, DataStart);

@@ -185,7 +185,7 @@ void sdpPlayerParseStateTableData::GetBoundary(double TimeStampForSearch, double
     return;
 }
 
-size_t sdpPlayerParseStateTableData::GetDataPoisitionFromFile(double Data, int FieldNumber) {
+size_t sdpPlayerParseStateTableData::GetDataPositionFromFile(double Data, int FieldNumber) {
     
     int i ;
     size_t TryToCount = 0;
@@ -289,8 +289,8 @@ void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Signal *  Sig
     double  min, max;
     SignalHandle->ComputeDataRangeX(min,max,true);   
     if (min<= LeftBoundaryTime && (LeftBoundaryTime >=  MinimumTime && !ResetSignalBuffer)) {       
-        LeftBoundaryPosition = GetDataPoisitionFromFile(max+TimeBaseOffset,  IndexOfTimeField);             
-        RightBoundaryPosition = GetDataPoisitionFromFile(RightBoundaryTime+TimeBaseOffset, IndexOfTimeField);       
+        LeftBoundaryPosition = GetDataPositionFromFile(max+TimeBaseOffset,  IndexOfTimeField);             
+        RightBoundaryPosition = GetDataPositionFromFile(RightBoundaryTime+TimeBaseOffset, IndexOfTimeField);       
         if (LeftBoundaryPosition >= RightBoundaryPosition)
             return;
         // load Data from File: [LeftBoundaryPosition, RightBoundaryPosition]
@@ -338,8 +338,8 @@ void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Signal *  Sig
         ElementsNumber = SignalHandle->GetNumberOfPoints();
         SignalBufferSize = SignalHandle->GetSize();
         SignalHandle->SetSize(SignalBufferSize);
-        LeftBoundaryPosition = GetDataPoisitionFromFile(LeftBoundaryTime+TimeBaseOffset  ,IndexOfTimeField);
-        RightBoundaryPosition = GetDataPoisitionFromFile(RightBoundaryTime+TimeBaseOffset, IndexOfTimeField);
+        LeftBoundaryPosition = GetDataPositionFromFile(LeftBoundaryTime+TimeBaseOffset  ,IndexOfTimeField);
+        RightBoundaryPosition = GetDataPositionFromFile(RightBoundaryTime+TimeBaseOffset, IndexOfTimeField);
 
         if (LeftBoundaryPosition >= RightBoundaryPosition)
             return;        
@@ -389,11 +389,11 @@ void sdpPlayerParseStateTableData::LoadDataFromFile(vctPlot2DBase::Signal *  Sig
         ElementsNumber = SignalHandle->GetNumberOfPoints();
         SignalBufferSize = SignalHandle->GetSize();
         SignalHandle->Resize(SignalBufferSize);
-        LeftBoundaryPosition = GetDataPoisitionFromFile(LeftBoundaryTime+TimeBaseOffset  ,IndexOfTimeField);        
+        LeftBoundaryPosition = GetDataPositionFromFile(LeftBoundaryTime+TimeBaseOffset  ,IndexOfTimeField);        
         //*********************************************************************************************
         // SECTION ONE, prepend data
         //*********************************************************************************************
-        RightBoundaryPosition = GetDataPoisitionFromFile(min+TimeBaseOffset  ,IndexOfTimeField);        
+        RightBoundaryPosition = GetDataPositionFromFile(min+TimeBaseOffset  ,IndexOfTimeField);        
         {
             inf.open(Header.FilePath.c_str(), std::ios_base::binary | std::ios_base::in);
             inf.seekg(LeftBoundaryPosition, std::ios::beg);
