@@ -157,8 +157,12 @@ void sdpPlayerNotes::QSlotOpenFileClicked(void) {
             TableWidget.setItem(row, 1, noteItem);
         }
 
+#if QT_VERSION >= 0x050000
+        TableWidget.horizontalHeader()->sectionResizeMode(QHeaderView::ResizeToContents);
+#else
         TableWidget.horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
-
+#endif
+     
         CMN_LOG_CLASS_RUN_VERBOSE<< "Loaded "<< TimestampsVec.size()<<" notes "<< fileName.toStdString()<<std::endl;
         BaseAccess.LoadData();
     }
@@ -166,7 +170,6 @@ void sdpPlayerNotes::QSlotOpenFileClicked(void) {
         CMN_LOG_CLASS_RUN_ERROR<< "Unable to open file" << fileName.toStdString()<<std::endl;
         ErrorMessage("Unable to open file" + fileName.toStdString());
     }
-
 
 }
 

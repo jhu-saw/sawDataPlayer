@@ -36,13 +36,16 @@ if (cisst_FOUND_AS_REQUIRED)
    add_definitions(-DsawPlayer_has_sawOpenAL)
   endif (sawOpenAL_FOUND)
 
+
+ if (CISST_HAS_QT4)
+
   qt4_wrap_cpp (QT_WRAPPED_CPP
                 sdpPlayerBase.h
                 sdpPlayerExample.h
                 sdpPlayerManager.h
                 sdpPlayerVideo.h
                 sdpPlayerPlot2D.h
-	        sdpPlayerNotes.h
+	              sdpPlayerNotes.h
                 ${audioPlayer_Header}
                 )
 
@@ -50,6 +53,25 @@ if (cisst_FOUND_AS_REQUIRED)
                sdpPlayerManagerWidget.ui
                sdpPlayerWidget.ui)
 
+   else (CISST_HAS_QT4)
+        # assumes Qt 5 Auto Moc
+        set (CMAKE_AUTOMOC ON)
+        qt5_wrap_cpp (QT_WRAPPED_CPP
+                sdpPlayerBase.h
+                sdpPlayerExample.h
+                sdpPlayerManager.h
+                sdpPlayerVideo.h
+                sdpPlayerPlot2D.h
+                sdpPlayerNotes.h
+                ${audioPlayer_Header}
+                )
+
+        qt5_wrap_ui (QT_WRAPPED_UI
+               sdpPlayerManagerWidget.ui
+               sdpPlayerWidget.ui)
+
+  endif (CISST_HAS_QT4)
+        
   add_library (sawDataPlayerComponents ${IS_SHARED}
                ${QT_WRAPPED_CPP}
                ${QT_WRAPPED_UI}
